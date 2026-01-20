@@ -80,33 +80,33 @@ This implementation plan breaks down the Depguardian CLI tool into discrete, inc
     - **Property 4: Missing dependency detection**
     - **Validates: Requirements 1.4**
 
-- [ ] 5. Checkpoint - Core Scanning Functionality
+- [x] 5. Checkpoint - Core Scanning Functionality
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 6. Advanced Scanners Implementation
-  - [ ] 6.1 Implement VersionMismatchScanner
+- [x] 6. Advanced Scanners Implementation
+  - [x] 6.1 Implement VersionMismatchScanner
     - Create scanner to find discrepancies between package.json and installed versions
     - _Requirements: 1.3_
 
-  - [ ] 6.2 Write property test for version mismatch detection
+  - [x] 6.2 Write property test for version mismatch detection
     - **Property 3: Version mismatch detection**
     - **Validates: Requirements 1.3**
 
-  - [ ] 6.3 Implement BrokenScanner
+  - [x] 6.3 Implement BrokenScanner
     - Create scanner to detect corrupted or incomplete installations
     - Check for missing files and corrupted package structures
     - _Requirements: 1.5_
 
-  - [ ] 6.4 Write property test for broken installation detection
+  - [x] 6.4 Write property test for broken installation detection
     - **Property 5: Broken installation detection**
     - **Validates: Requirements 1.5**
 
-  - [ ] 6.5 Implement PeerConflictScanner
+  - [x] 6.5 Implement PeerConflictScanner
     - Create scanner to analyze peer dependency compatibility
     - Detect incompatible peer dependency requirements
     - _Requirements: 1.6_
 
-  - [ ] 6.6 Write property test for peer conflict detection
+  - [x] 6.6 Write property test for peer conflict detection
     - **Property 6: Peer conflict detection**
     - **Validates: Requirements 1.6**
 
