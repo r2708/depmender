@@ -29,28 +29,28 @@ This implementation plan breaks down the Depguardian CLI tool into discrete, inc
     - **Property 7: Health score bounds**
     - **Validates: Requirements 1.7**
 
-- [-] 3. Package Manager Detection and Adapters
+- [x] 3. Package Manager Detection and Adapters
   - [x] 3.1 Implement package manager detection logic
     - Create utility to detect npm, yarn, or pnpm based on lockfiles
     - Implement PackageManagerAdapter interface
     - _Requirements: 7.1, 7.2, 7.3_
 
-  - [ ] 3.2 Implement NPM adapter
+  - [x] 3.2 Implement NPM adapter
     - Create NPMAdapter class implementing PackageManagerAdapter
     - Add package-lock.json parsing and npm-specific logic
     - _Requirements: 7.1, 7.4, 7.5_
 
-  - [ ] 3.3 Implement Yarn adapter
+  - [x] 3.3 Implement Yarn adapter
     - Create YarnAdapter class implementing PackageManagerAdapter
     - Add yarn.lock parsing and yarn-specific logic
     - _Requirements: 7.2, 7.4, 7.5_
 
-  - [ ] 3.4 Implement PNPM adapter
+  - [x] 3.4 Implement PNPM adapter
     - Create PNPMAdapter class implementing PackageManagerAdapter
     - Add pnpm-lock.yaml parsing and pnpm-specific logic
     - _Requirements: 7.3, 7.4, 7.5_
 
-  - [ ] 3.5 Write property tests for package manager adapters
+  - [x] 3.5 Write property tests for package manager adapters
     - **Property 35: NPM-specific handling**
     - **Property 36: Yarn-specific handling**
     - **Property 37: PNPM-specific handling**
