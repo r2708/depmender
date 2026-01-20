@@ -18,8 +18,8 @@ This implementation plan breaks down the Depguardian CLI tool into discrete, inc
   - **Property 1: Complete project analysis**
   - **Validates: Requirements 1.1**
 
-- [ ] 2. Core Data Models and Types
-  - [ ] 2.1 Implement core TypeScript interfaces and types
+- [-] 2. Core Data Models and Types
+  - [x] 2.1 Implement core TypeScript interfaces and types
     - Create PackageJson, DependencyIssue, AnalysisResult interfaces
     - Define SecurityIssue, VulnerabilityInfo, and HealthReport types
     - Implement enums for IssueType, IssueSeverity, PackageManagerType
