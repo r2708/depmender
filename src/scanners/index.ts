@@ -1,5 +1,8 @@
-// Scanner exports - placeholder for task 4
-// Will be implemented in tasks 4-7
+// Core Scanner Infrastructure
+export { BaseDependencyScanner } from './BaseDependencyScanner';
+export { ScannerRegistry } from './ScannerRegistry';
+export { ScanContextFactory } from './ScanContextFactory';
 
-// Temporary placeholder export to make this a valid module
-export const SCANNERS_PLACEHOLDER = 'scanners';
+// Specific Scanners
+export { OutdatedScanner } from './OutdatedScanner';
+export { MissingScanner } from './MissingScanner';

@@ -56,27 +56,27 @@ This implementation plan breaks down the Depguardian CLI tool into discrete, inc
     - **Property 37: PNPM-specific handling**
     - **Validates: Requirements 7.1, 7.2, 7.3**
 
-- [ ] 4. Core Scanner Infrastructure
-  - [ ] 4.1 Implement base DependencyScanner interface and ScanContext
+- [x] 4. Core Scanner Infrastructure
+  - [x] 4.1 Implement base DependencyScanner interface and ScanContext
     - Create abstract base scanner class
     - Implement ScanContext with project information
     - Create scanner registry for managing different scanner types
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6_
 
-  - [ ] 4.2 Implement OutdatedScanner
+  - [x] 4.2 Implement OutdatedScanner
     - Create scanner to detect outdated packages by comparing versions
     - Integrate with package registry APIs to fetch latest versions
     - _Requirements: 1.2_
 
-  - [ ] 4.3 Write property test for outdated detection
+  - [x] 4.3 Write property test for outdated detection
     - **Property 2: Outdated package detection**
     - **Validates: Requirements 1.2**
 
-  - [ ] 4.4 Implement MissingScanner
+  - [x] 4.4 Implement MissingScanner
     - Create scanner to identify packages in package.json but not in node_modules
     - _Requirements: 1.4_
 
-  - [ ] 4.5 Write property test for missing dependency detection
+  - [x] 4.5 Write property test for missing dependency detection
     - **Property 4: Missing dependency detection**
     - **Validates: Requirements 1.4**
 
