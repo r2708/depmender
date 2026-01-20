@@ -18,19 +18,19 @@ This implementation plan breaks down the Depguardian CLI tool into discrete, inc
   - **Property 1: Complete project analysis**
   - **Validates: Requirements 1.1**
 
-- [-] 2. Core Data Models and Types
+- [x] 2. Core Data Models and Types
   - [x] 2.1 Implement core TypeScript interfaces and types
     - Create PackageJson, DependencyIssue, AnalysisResult interfaces
     - Define SecurityIssue, VulnerabilityInfo, and HealthReport types
     - Implement enums for IssueType, IssueSeverity, PackageManagerType
     - _Requirements: 1.1, 2.1, 8.1_
 
-  - [ ] 2.2 Write property tests for data model validation
+  - [x] 2.2 Write property tests for data model validation
     - **Property 7: Health score bounds**
     - **Validates: Requirements 1.7**
 
-- [ ] 3. Package Manager Detection and Adapters
-  - [ ] 3.1 Implement package manager detection logic
+- [-] 3. Package Manager Detection and Adapters
+  - [x] 3.1 Implement package manager detection logic
     - Create utility to detect npm, yarn, or pnpm based on lockfiles
     - Implement PackageManagerAdapter interface
     - _Requirements: 7.1, 7.2, 7.3_
