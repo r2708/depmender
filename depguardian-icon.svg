@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="shieldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2563eb;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#10b981;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="innerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#06d6a0;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Main Shield Shape -->
+  <path d="M64 8C64 8 32 16 32 16C32 16 32 48 32 64C32 88 64 120 64 120C64 120 96 88 96 64C96 48 96 16 96 16C96 16 64 8 64 8Z" 
+        fill="url(#shieldGradient)" 
+        stroke="none"/>
+  
+  <!-- Inner Shield Highlight -->
+  <path d="M64 16C64 16 40 22 40 22C40 22 40 48 40 62C40 82 64 108 64 108C64 108 88 82 88 62C88 48 88 22 88 22C88 22 64 16 64 16Z" 
+        fill="url(#innerGradient)" 
+        opacity="0.3"/>
+  
+  <!-- Package/Node Network -->
+  <g fill="white" opacity="0.9">
+    <!-- Central Node -->
+    <circle cx="64" cy="52" r="6" fill="white"/>
+    
+    <!-- Dependency Nodes -->
+    <circle cx="48" cy="40" r="4" fill="white" opacity="0.8"/>
+    <circle cx="80" cy="40" r="4" fill="white" opacity="0.8"/>
+    <circle cx="48" cy="64" r="4" fill="white" opacity="0.8"/>
+    <circle cx="80" cy="64" r="4" fill="white" opacity="0.8"/>
+    <circle cx="64" cy="76" r="4" fill="white" opacity="0.8"/>
+    
+    <!-- Connection Lines -->
+    <line x1="64" y1="52" x2="48" y2="40" stroke="white" stroke-width="2" opacity="0.6"/>
+    <line x1="64" y1="52" x2="80" y2="40" stroke="white" stroke-width="2" opacity="0.6"/>
+    <line x1="64" y1="52" x2="48" y2="64" stroke="white" stroke-width="2" opacity="0.6"/>
+    <line x1="64" y1="52" x2="80" y2="64" stroke="white" stroke-width="2" opacity="0.6"/>
+    <line x1="64" y1="52" x2="64" y2="76" stroke="white" stroke-width="2" opacity="0.6"/>
+  </g>
+  
+  <!-- Health Monitor Line (Heartbeat) -->
+  <g stroke="white" stroke-width="2.5" fill="none" opacity="0.7">
+    <path d="M44 88 L48 88 L52 82 L56 94 L60 76 L64 88 L68 88 L72 82 L76 94 L80 82 L84 88"/>
+  </g>
+</svg>
