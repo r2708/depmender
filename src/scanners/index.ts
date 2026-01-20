@@ -9,3 +9,4 @@ export { MissingScanner } from './MissingScanner';
 export { VersionMismatchScanner } from './VersionMismatchScanner';
 export { BrokenScanner } from './BrokenScanner';
 export { PeerConflictScanner } from './PeerConflictScanner';
+export { SecurityScanner } from './SecurityScanner';
