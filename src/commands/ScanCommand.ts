@@ -7,7 +7,7 @@ import { logger } from '../utils/Logger';
 
 /**
  * Scan command implementation
- * Requirement 6.1: Execute `depguardian scan` to analyze project dependencies
+ * Requirement 6.1: Execute `depmender scan` to analyze project dependencies
  */
 export class ScanCommand extends BaseCommand {
   name = 'scan';
@@ -107,16 +107,16 @@ export class ScanCommand extends BaseCommand {
     
     if (criticalIssues.length > 0 || criticalSecurity.length > 0) {
       lines.push(CLIFormatter.critical('CRITICAL ISSUES DETECTED!'));
-      lines.push(`   Run ${CLIFormatter.command('depguardian report')} for detailed information`);
-      lines.push(`   Run ${CLIFormatter.command('depguardian fix')} to apply automated fixes`);
+      lines.push(`   Run ${CLIFormatter.command('depmender report')} for detailed information`);
+      lines.push(`   Run ${CLIFormatter.command('depmender fix')} to apply automated fixes`);
       lines.push('');
     }
     
     // Next steps with enhanced formatting
     lines.push(CLIFormatter.sectionHeader('💡 Next Steps'));
     const nextSteps = [
-      `Run ${CLIFormatter.command('depguardian report')} for detailed analysis`,
-      `Run ${CLIFormatter.command('depguardian fix')} to apply automated fixes`,
+      `Run ${CLIFormatter.command('depmender report')} for detailed analysis`,
+      `Run ${CLIFormatter.command('depmender fix')} to apply automated fixes`,
       `Use ${CLIFormatter.command('--json')} flag for machine-readable output`
     ];
     lines.push(CLIFormatter.bulletList(nextSteps));

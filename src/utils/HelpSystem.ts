@@ -15,7 +15,7 @@ export class HelpSystem {
       {
         title: 'DESCRIPTION',
         content: [
-          'Depguardian is a comprehensive CLI tool for analyzing, reporting, and fixing',
+          'DepMender is a comprehensive CLI tool for analyzing, reporting, and fixing',
           'dependency issues in JavaScript/TypeScript projects. It supports npm, yarn,',
           'and pnpm package managers and provides intelligent suggestions for maintaining',
           'healthy project dependencies.'
@@ -24,7 +24,7 @@ export class HelpSystem {
       {
         title: 'USAGE',
         content: [
-          'depguardian <command> [options]',
+          'depmender <command> [options]',
           '',
           'Available commands:',
           '  scan     Analyze project dependencies and identify issues',
@@ -46,22 +46,22 @@ export class HelpSystem {
         title: 'EXAMPLES',
         content: [
           'Basic usage:',
-          '  depguardian scan                    # Analyze current directory',
-          '  depguardian report --verbose        # Generate detailed report',
-          '  depguardian fix --yes               # Auto-fix without confirmation',
+          '  depmender scan                    # Analyze current directory',
+          '  depmender report --verbose        # Generate detailed report',
+          '  depmender fix --yes               # Auto-fix without confirmation',
           '',
           'Advanced usage:',
-          '  depguardian scan --path ./my-app    # Analyze specific directory',
-          '  depguardian report --json > report.json  # Export JSON report',
-          '  depguardian fix --path ./backend    # Fix specific project'
+          '  depmender scan --path ./my-app    # Analyze specific directory',
+          '  depmender report --json > report.json  # Export JSON report',
+          '  depmender fix --path ./backend    # Fix specific project'
         ]
       },
       {
         title: 'WORKFLOW',
         content: [
-          '1. Run "depguardian scan" to get a quick overview of issues',
-          '2. Run "depguardian report" for detailed analysis and recommendations',
-          '3. Run "depguardian fix" to apply automated fixes',
+          '1. Run "depmender scan" to get a quick overview of issues',
+          '2. Run "depmender report" for detailed analysis and recommendations',
+          '3. Run "depmender fix" to apply automated fixes',
           '4. Test your application after applying fixes',
           '5. Re-run scan to verify all issues are resolved'
         ]
@@ -86,7 +86,7 @@ export class HelpSystem {
       {
         title: 'USAGE',
         content: [
-          'depguardian scan [options]'
+          'depmender scan [options]'
         ]
       },
       {
@@ -111,9 +111,9 @@ export class HelpSystem {
       {
         title: 'EXAMPLES',
         content: [
-          'depguardian scan                     # Scan current directory',
-          'depguardian scan --path ./frontend   # Scan specific directory',
-          'depguardian scan --json              # Get machine-readable output'
+          'depmender scan                     # Scan current directory',
+          'depmender scan --path ./frontend   # Scan specific directory',
+          'depmender scan --json              # Get machine-readable output'
         ]
       }
     ];
@@ -136,7 +136,7 @@ export class HelpSystem {
       {
         title: 'USAGE',
         content: [
-          'depguardian report [options]'
+          'depmender report [options]'
         ]
       },
       {
@@ -162,9 +162,9 @@ export class HelpSystem {
       {
         title: 'EXAMPLES',
         content: [
-          'depguardian report                   # Generate full report',
-          'depguardian report --verbose         # Include additional details',
-          'depguardian report --json > report.json  # Export to file'
+          'depmender report                   # Generate full report',
+          'depmender report --verbose         # Include additional details',
+          'depmender report --json > report.json  # Export to file'
         ]
       }
     ];
@@ -187,7 +187,7 @@ export class HelpSystem {
       {
         title: 'USAGE',
         content: [
-          'depguardian fix [options]'
+          'depmender fix [options]'
         ]
       },
       {
@@ -222,9 +222,9 @@ export class HelpSystem {
       {
         title: 'EXAMPLES',
         content: [
-          'depguardian fix                      # Interactive fix with prompts',
-          'depguardian fix --yes                # Auto-fix without confirmation',
-          'depguardian fix --path ./api         # Fix specific project'
+          'depmender fix                      # Interactive fix with prompts',
+          'depmender fix --yes                # Auto-fix without confirmation',
+          'depmender fix --path ./api         # Fix specific project'
         ]
       },
       {
@@ -233,7 +233,7 @@ export class HelpSystem {
           '1. Test your application thoroughly',
           '2. Run your test suite',
           '3. Check for any breaking changes',
-          '4. Run "depguardian scan" to verify fixes',
+          '4. Run "depmender scan" to verify fixes',
           '5. Commit changes if everything works correctly'
         ]
       }
@@ -250,7 +250,7 @@ export class HelpSystem {
       {
         title: 'TROUBLESHOOTING',
         content: [
-          'Common issues and solutions when using Depguardian.'
+          'Common issues and solutions when using DepMender.'
         ]
       },
       {
@@ -258,19 +258,19 @@ export class HelpSystem {
         content: [
           'Issue: "package.json not found"',
           'Solution: Make sure you\'re in a valid Node.js project directory',
-          'Example: cd /path/to/your/project && depguardian scan',
+          'Example: cd /path/to/your/project && depmender scan',
           '',
           'Issue: "Permission denied" errors',
           'Solution: Check file permissions or run with appropriate privileges',
-          'Example: sudo depguardian fix (use with caution)',
+          'Example: sudo depmender fix (use with caution)',
           '',
           'Issue: "Network timeout" during analysis',
           'Solution: Check internet connection and try again',
-          'Example: depguardian scan --verbose (for more details)',
+          'Example: depmender scan --verbose (for more details)',
           '',
           'Issue: "Analysis failed" errors',
           'Solution: Verify package.json is valid JSON and contains required fields',
-          'Example: depguardian scan --path ./specific-project'
+          'Example: depmender scan --path ./specific-project'
         ]
       },
       {
@@ -279,10 +279,10 @@ export class HelpSystem {
           'If you encounter issues:',
           '1. Check that you\'re in a valid Node.js project',
           '2. Ensure package.json exists and is valid',
-          '3. Try running depguardian scan --verbose for more details',
+          '3. Try running depmender scan --verbose for more details',
           '4. Check network connectivity for registry access',
           '5. Verify file and directory permissions',
-          '6. Use depguardian help for general usage information'
+          '6. Use depmender help for general usage information'
         ]
       }
     ];
@@ -298,45 +298,45 @@ export class HelpSystem {
       {
         title: 'EXAMPLES & USE CASES',
         content: [
-          'Common workflows and usage patterns for Depguardian.'
+          'Common workflows and usage patterns for DepMender.'
         ]
       },
       {
         title: 'DAILY DEVELOPMENT WORKFLOW',
         content: [
           '# Quick health check',
-          'depguardian scan',
+          'depmender scan',
           '',
           '# Detailed analysis before deployment',
-          'depguardian report --verbose',
+          'depmender report --verbose',
           '',
           '# Fix issues automatically',
-          'depguardian fix --yes'
+          'depmender fix --yes'
         ]
       },
       {
         title: 'CI/CD INTEGRATION',
         content: [
           '# Generate JSON report for CI',
-          'depguardian scan --json > dependency-report.json',
+          'depmender scan --json > dependency-report.json',
           '',
           '# Fail build on critical issues',
-          'depguardian scan --json | jq \'.healthScore < 50\' && exit 1',
+          'depmender scan --json | jq \'.healthScore < 50\' && exit 1',
           '',
           '# Auto-fix in CI (with caution)',
-          'depguardian fix --yes && npm test'
+          'depmender fix --yes && npm test'
         ]
       },
       {
         title: 'MONOREPO USAGE',
         content: [
           '# Analyze specific packages',
-          'depguardian scan --path ./packages/frontend',
-          'depguardian scan --path ./packages/backend',
+          'depmender scan --path ./packages/frontend',
+          'depmender scan --path ./packages/backend',
           '',
           '# Generate reports for all packages',
           'for dir in packages/*/; do',
-          '  depguardian report --path "$dir" --json > "${dir}report.json"',
+          '  depmender report --path "$dir" --json > "${dir}report.json"',
           'done'
         ]
       },
@@ -344,13 +344,13 @@ export class HelpSystem {
         title: 'SECURITY FOCUSED WORKFLOW',
         content: [
           '# Focus on security issues',
-          'depguardian report | grep -A 10 "SECURITY VULNERABILITIES"',
+          'depmender report | grep -A 10 "SECURITY VULNERABILITIES"',
           '',
           '# Export security report',
-          'depguardian report --json | jq \'.securityIssues\' > security.json',
+          'depmender report --json | jq \'.securityIssues\' > security.json',
           '',
           '# Fix security issues first',
-          'depguardian fix --yes  # Review security fixes carefully'
+          'depmender fix --yes  # Review security fixes carefully'
         ]
       }
     ];

@@ -1,4 +1,4 @@
-# Depguardian
+# DepMender
 
 A CLI tool that scans JavaScript/TypeScript projects for dependency issues and fixes them.
 
@@ -14,20 +14,20 @@ A CLI tool that scans JavaScript/TypeScript projects for dependency issues and f
 ## Installation
 
 ```bash
-npm install -g depguardian
+npm install -g depmender
 ```
 
 ## Usage
 
 ```bash
 # Scan project dependencies
-depguardian scan
+depmender scan
 
 # Generate detailed health report
-depguardian report
+depmender report
 
 # Apply automated fixes
-depguardian fix
+depmender fix
 ```
 
 ## Development

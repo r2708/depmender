@@ -1,4 +1,4 @@
-// Main entry point for the Depguardian library
+// Main entry point for the DepMender library
 
 // Export the main class (not the interface)
 export { DependencyAnalyzer } from './core/DependencyAnalyzer';
