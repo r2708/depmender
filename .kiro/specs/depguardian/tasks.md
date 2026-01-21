@@ -253,36 +253,36 @@ This implementation plan breaks down the Depguardian CLI tool into discrete, inc
     - **Property 30: Unresolvable conflict explanation**
     - **Validates: Requirements 5.3, 5.4, 5.5**
 
-- [ ] 14. CLI Interface Implementation
-  - [ ] 14.1 Implement CLI command infrastructure
+- [x] 14. CLI Interface Implementation
+  - [x] 14.1 Implement CLI command infrastructure
     - Set up command-line argument parsing with commander.js
     - Create base CLI command structure
     - _Requirements: 6.1, 6.2, 6.3_
 
-  - [ ] 14.2 Implement scan command
+  - [x] 14.2 Implement scan command
     - Create `depguardian scan` command implementation
     - _Requirements: 6.1_
 
-  - [ ] 14.3 Implement report command
+  - [x] 14.3 Implement report command
     - Create `depguardian report` command implementation
     - _Requirements: 6.3_
 
-  - [ ] 14.4 Implement fix command
+  - [x] 14.4 Implement fix command
     - Create `depguardian fix` command implementation
     - _Requirements: 6.2_
 
-  - [ ] 14.5 Write unit tests for specific CLI commands
+  - [x] 14.5 Write unit tests for specific CLI commands
     - Test scan, report, and fix command behaviors
     - **Validates: Requirements 6.1, 6.2, 6.3**
 
-  - [ ] 14.6 Implement CLI output formatting and user experience
+  - [x] 14.6 Implement CLI output formatting and user experience
     - Add clean, formatted output with clear summaries
     - Add progress indicators for long-running operations
     - Add helpful error messages with suggested solutions
     - Add comprehensive help documentation
     - _Requirements: 6.4, 6.5, 6.6, 6.7_
 
-  - [ ] 14.7 Write property tests for CLI behavior
+  - [x] 14.7 Write property tests for CLI behavior
     - **Property 31: Clean output formatting**
     - **Property 32: Progress indication for long operations**
     - **Property 33: Helpful error messages**
