@@ -24,15 +24,18 @@ import {
   PeerConflictScanner,
   SecurityScanner
 } from '../scanners';
+import { HealthReporter } from '../reporters';
 
 /**
  * Main dependency analyzer that orchestrates all scanners and calculates health scores
  */
 export class DependencyAnalyzer implements IDependencyAnalyzer {
   private scannerRegistry: ScannerRegistry;
+  private healthReporter: HealthReporter;
 
   constructor() {
     this.scannerRegistry = new ScannerRegistry();
+    this.healthReporter = new HealthReporter();
     this.initializeScanners();
   }
 
@@ -339,12 +342,9 @@ export class DependencyAnalyzer implements IDependencyAnalyzer {
 
   /**
    * Generates a health report from analysis results
-   * Note: This is a placeholder implementation - full reporting will be implemented in task 9
    */
   async generateReport(analysis: AnalysisResult): Promise<HealthReport> {
-    // This is a minimal implementation to satisfy the interface
-    // Full implementation will be done in the Health Reporter task
-    throw new Error('Health report generation not yet implemented - will be implemented in task 9');
+    return await this.healthReporter.generateReport(analysis);
   }
 
   /**
