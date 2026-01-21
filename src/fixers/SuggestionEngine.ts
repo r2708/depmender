@@ -1425,10 +1425,30 @@ export class SuggestionEngine {
     const suggestions: FixSuggestion[] = [];
 
     if (vulnerability.fixedIn) {
+      // Determine risk level based on security severity, not just version change
+      let riskLevel: RiskLevel;
+      switch (vulnerability.severity) {
+        case SecuritySeverity.CRITICAL:
+          riskLevel = RiskLevel.CRITICAL;
+          break;
+        case SecuritySeverity.HIGH:
+          riskLevel = RiskLevel.HIGH;
+          break;
+        case SecuritySeverity.MODERATE:
+          riskLevel = RiskLevel.MEDIUM;
+          break;
+        case SecuritySeverity.LOW:
+          riskLevel = RiskLevel.LOW;
+          break;
+        default:
+          riskLevel = RiskLevel.HIGH; // Default to high for unknown severity
+      }
+
+      // Generate update suggestion when fix is available
       suggestions.push({
         type: FixType.UPDATE_OUTDATED,
         description: `Update ${vulnerability.packageName} to ${vulnerability.fixedIn} to fix security vulnerability`,
-        risk: this.estimateBreakingChangeRisk(vulnerability.version, vulnerability.fixedIn, vulnerability.packageName),
+        risk: riskLevel,
         actions: [{
           type: 'update',
           packageName: vulnerability.packageName,
@@ -1436,6 +1456,17 @@ export class SuggestionEngine {
           command: this.getUpdateCommand(vulnerability.packageName, vulnerability.fixedIn, analysis.packageManager)
         }],
         estimatedImpact: `Fixes security vulnerability: ${vulnerability.vulnerability.title}`
+      });
+    } else {
+      // Generate guidance suggestion when no fix is available
+      const riskLevel = vulnerability.severity === SecuritySeverity.CRITICAL ? RiskLevel.CRITICAL : RiskLevel.HIGH;
+      
+      suggestions.push({
+        type: FixType.RESOLVE_CONFLICT,
+        description: `Security vulnerability in ${vulnerability.packageName} - no patch available`,
+        risk: riskLevel,
+        actions: [],
+        estimatedImpact: `Security vulnerability: ${vulnerability.vulnerability.title}. Consider finding alternative packages or implementing workarounds.`
       });
     }
 

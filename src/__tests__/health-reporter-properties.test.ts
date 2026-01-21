@@ -445,6 +445,113 @@ describe('Health Reporter Properties', () => {
   });
 
   /**
+   * Property 13: Report structure consistency
+   * For any generated report, the output should have clear, readable structure with appropriate categorization
+   * Validates: Requirements 2.6
+   */
+  test('Property 13: Report structure consistency', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        fc.record({
+          healthScore: fc.integer({ min: 0, max: 100 }),
+          issues: fc.array(
+            fc.record({
+              type: fc.constantFrom(...Object.values(IssueType)),
+              packageName: fc.string({ minLength: 1, maxLength: 50 }),
+              currentVersion: fc.option(fc.string({ minLength: 1, maxLength: 20 }), { nil: undefined }),
+              expectedVersion: fc.option(fc.string({ minLength: 1, maxLength: 20 }), { nil: undefined }),
+              latestVersion: fc.option(fc.string({ minLength: 1, maxLength: 20 }), { nil: undefined }),
+              severity: fc.constantFrom(...Object.values(IssueSeverity)),
+              description: fc.string({ minLength: 1, maxLength: 200 }),
+              fixable: fc.boolean()
+            }),
+            { maxLength: 10 }
+          ),
+          packageManager: fc.constantFrom(...Object.values(PackageManagerType)),
+          projectInfo: fc.record({
+            name: fc.string({ minLength: 1, maxLength: 50 }),
+            version: fc.string({ minLength: 1, maxLength: 20 }),
+            path: fc.string({ minLength: 1, maxLength: 100 }),
+            packageManager: fc.constantFrom(...Object.values(PackageManagerType))
+          }),
+          securityVulnerabilities: fc.array(securityIssueArbitrary(), { maxLength: 5 })
+        }),
+        async (analysisResult: AnalysisResult) => {
+          const healthReporter = new HealthReporter();
+          const report = await healthReporter.generateReport(analysisResult);
+          const cliOutput = healthReporter.formatForCLI(report);
+          
+          // Verify clear, readable structure
+          expect(typeof cliOutput).toBe('string');
+          expect(cliOutput.length).toBeGreaterThan(0);
+          
+          // Verify appropriate categorization with expected sections
+          const expectedSections = [
+            'DEPENDENCY HEALTH REPORT',
+            'Overall Health Score',
+            'SUMMARY'
+          ];
+          
+          for (const section of expectedSections) {
+            expect(cliOutput).toContain(section);
+          }
+          
+          // Verify sections appear in logical order
+          const headerIndex = cliOutput.indexOf('DEPENDENCY HEALTH REPORT');
+          const scoreIndex = cliOutput.indexOf('Overall Health Score');
+          const summaryIndex = cliOutput.indexOf('SUMMARY');
+          
+          expect(headerIndex).toBeLessThan(scoreIndex);
+          expect(scoreIndex).toBeLessThan(summaryIndex);
+          
+          // Verify conditional sections appear when relevant
+          if (analysisResult.issues.some(issue => issue.type === IssueType.OUTDATED && issue.latestVersion)) {
+            expect(cliOutput).toContain('OUTDATED PACKAGES');
+          }
+          
+          if (analysisResult.securityVulnerabilities.length > 0) {
+            expect(cliOutput).toContain('SECURITY VULNERABILITIES');
+          }
+          
+          if (analysisResult.issues.some(issue => issue.type === IssueType.PEER_CONFLICT)) {
+            expect(cliOutput).toContain('PEER DEPENDENCY CONFLICTS');
+          }
+          
+          // Verify critical issues are emphasized when present
+          const hasCriticalIssues = analysisResult.issues.some(issue => issue.severity === IssueSeverity.CRITICAL) ||
+                                   analysisResult.securityVulnerabilities.some(issue => issue.severity === SecuritySeverity.CRITICAL);
+          
+          if (hasCriticalIssues) {
+            expect(cliOutput).toContain('CRITICAL ISSUES');
+          }
+          
+          // Verify consistent formatting patterns
+          expect(cliOutput).toMatch(/={10,}/); // Section separators
+          expect(cliOutput).toMatch(/\n\s*\n/); // Proper spacing between sections
+          
+          // Verify JSON structure is also consistent
+          const jsonOutput = healthReporter.formatForJSON(report);
+          const parsedJson = JSON.parse(jsonOutput);
+          
+          // Verify all required top-level fields are present
+          const requiredFields = ['healthScore', 'summary', 'outdatedPackages', 'securityIssues', 'peerConflicts', 'recommendations'];
+          for (const field of requiredFields) {
+            expect(parsedJson).toHaveProperty(field);
+          }
+          
+          // Verify summary structure
+          const summaryFields = ['totalPackages', 'issuesFound', 'criticalIssues', 'securityVulnerabilities', 'healthScore'];
+          for (const field of summaryFields) {
+            expect(parsedJson.summary).toHaveProperty(field);
+            expect(typeof parsedJson.summary[field]).toBe('number');
+          }
+        }
+      ),
+      { numRuns: 50 }
+    );
+  });
+
+  /**
    * Property 12: Critical issue emphasis
    * For any analysis with critical problems, high-priority issues should be emphasized in the report
    * Validates: Requirements 2.5

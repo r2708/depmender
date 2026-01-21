@@ -280,6 +280,22 @@ export class HealthReporter implements IHealthReporter {
       });
     }
 
+    // High severity security recommendations
+    const highSecurity = analysis.securityVulnerabilities.filter(
+      issue => issue.severity === SecuritySeverity.HIGH
+    );
+    
+    if (highSecurity.length > 0) {
+      recommendations.push({
+        type: 'update',
+        description: `Update ${highSecurity.length} high severity security vulnerabilities`,
+        priority: 'high',
+        commands: highSecurity
+          .filter(issue => issue.fixedIn)
+          .map(issue => `npm update ${issue.packageName}@${issue.fixedIn}`)
+      });
+    }
+
     // Missing packages recommendations
     const missingPackages = analysis.issues.filter(issue => issue.type === IssueType.MISSING);
     if (missingPackages.length > 0) {

@@ -301,19 +301,19 @@ This implementation plan breaks down the Depguardian CLI tool into discrete, inc
     - Test with real npm, yarn, and pnpm projects
     - _Requirements: All requirements_
 
-- [ ] 16. Package Manager Integration Testing
-  - [ ] 16.1 Write property tests for package manager integration
+- [x] 16. Package Manager Integration Testing
+  - [x] 16.1 Write property tests for package manager integration
     - **Property 38: Appropriate package manager usage**
     - **Property 39: Consistent lockfile regeneration**
     - **Validates: Requirements 7.4, 7.5**
 
-- [ ] 17. Security Integration Testing
-  - [ ] 17.1 Write property tests for security features
+- [x] 17. Security Integration Testing
+  - [x] 17.1 Write property tests for security features
     - **Property 42: Security fix version recommendations**
     - **Property 43: Critical vulnerability prioritization**
     - **Validates: Requirements 8.3, 8.4**
 
-- [ ] 18. Final Checkpoint - Complete System Testing
+- [x] 18. Final Checkpoint - Complete System Testing
   - Ensure all tests pass, ask the user if questions arise.
   - Verify all 43 correctness properties are implemented and passing
   - Test with various real-world project scenarios
