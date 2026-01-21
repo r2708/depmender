@@ -348,10 +348,12 @@ export class SuggestionEngine {
     }
 
     // Suggest package manager specific solutions
+    const packageNames = conflicts.map(c => c.packageName).join(', ');
+    
     if (analysis.packageManager === PackageManagerType.NPM) {
       suggestions.push({
         type: FixType.RESOLVE_CONFLICT,
-        description: 'Consider using npm overrides to resolve peer dependency conflicts',
+        description: `Consider using npm overrides to resolve peer dependency conflicts for ${packageNames}`,
         risk: RiskLevel.HIGH,
         actions: [],
         estimatedImpact: 'Forces dependency resolution - may cause runtime issues'
@@ -359,7 +361,7 @@ export class SuggestionEngine {
     } else if (analysis.packageManager === PackageManagerType.YARN) {
       suggestions.push({
         type: FixType.RESOLVE_CONFLICT,
-        description: 'Consider using Yarn resolutions to resolve peer dependency conflicts',
+        description: `Consider using Yarn resolutions to resolve peer dependency conflicts for ${packageNames}`,
         risk: RiskLevel.HIGH,
         actions: [],
         estimatedImpact: 'Forces dependency resolution - may cause runtime issues'

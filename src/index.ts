@@ -12,8 +12,10 @@ export * from './scanners';
 // Export reporter implementations (not interfaces)
 export { HealthReporter } from './reporters/HealthReporter';
 
-// Export fixer implementations
-export * from './fixers';
+// Export fixer implementations (not interfaces)
+export { SuggestionEngine } from './fixers/SuggestionEngine';
+export { AutoFixer } from './fixers/AutoFixer';
+export { ConflictResolver } from './fixers/ConflictResolver';
 
 // Export adapter implementations
 export * from './adapters';
