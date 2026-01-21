@@ -3,6 +3,7 @@ import { CommandArgs, CommandResult } from '../core/types';
 import { DependencyAnalyzer } from '../core/DependencyAnalyzer';
 import { CLIFormatter } from '../utils/CLIFormatter';
 import { ProgressIndicator } from '../utils/ProgressIndicator';
+import { logger } from '../utils/Logger';
 
 /**
  * Scan command implementation
@@ -11,25 +12,32 @@ import { ProgressIndicator } from '../utils/ProgressIndicator';
 export class ScanCommand extends BaseCommand {
   name = 'scan';
   description = 'Analyze project dependencies and identify issues';
+  private logger = logger.child('ScanCommand');
 
   async execute(args: CommandArgs): Promise<CommandResult> {
+    this.logger.info('Starting scan command execution');
+    
     const progress = new ProgressIndicator('Initializing dependency analysis...');
     progress.start();
     
     try {
       // Initialize the dependency analyzer
+      this.logger.debug('Initializing dependency analyzer');
       const analyzer = new DependencyAnalyzer();
       
       // Show progress for long-running operations
       progress.updateText('Reading project structure...');
       
       // Perform the analysis
+      this.logger.info(`Analyzing project at: ${args.projectPath}`);
       const analysis = await analyzer.analyze(args.projectPath);
       
       progress.updateText('Calculating health score...');
       
       // Stop the progress indicator
       progress.succeed('Analysis complete!');
+      
+      this.logger.info(`Analysis completed with health score: ${analysis.healthScore}`);
       
       // Format output based on options
       if (args.options.json) {
@@ -46,6 +54,7 @@ export class ScanCommand extends BaseCommand {
       
     } catch (error) {
       progress.fail('Analysis failed');
+      this.logger.error('Scan command failed', error instanceof Error ? error : undefined);
       return this.handleError(error, 'Dependency analysis');
     }
   }

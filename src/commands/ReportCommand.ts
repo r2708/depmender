@@ -2,6 +2,7 @@ import { BaseCommand } from './BaseCommand';
 import { CommandArgs, CommandResult } from '../core/types';
 import { DependencyAnalyzer } from '../core/DependencyAnalyzer';
 import { HealthReporter } from '../reporters/HealthReporter';
+import { logger } from '../utils/Logger';
 import ora from 'ora';
 
 /**
@@ -11,12 +12,16 @@ import ora from 'ora';
 export class ReportCommand extends BaseCommand {
   name = 'report';
   description = 'Generate detailed dependency health report';
+  private logger = logger.child('ReportCommand');
 
   async execute(args: CommandArgs): Promise<CommandResult> {
+    this.logger.info('Starting report command execution');
+    
     const spinner = ora('Generating dependency health report...').start();
     
     try {
       // Initialize components
+      this.logger.debug('Initializing analyzer and reporter');
       const analyzer = new DependencyAnalyzer();
       const healthReporter = new HealthReporter();
       
@@ -24,15 +29,19 @@ export class ReportCommand extends BaseCommand {
       spinner.text = 'Analyzing project dependencies...';
       
       // Perform the analysis
+      this.logger.info(`Analyzing project at: ${args.projectPath}`);
       const analysis = await analyzer.analyze(args.projectPath);
       
       spinner.text = 'Generating comprehensive report...';
       
       // Generate the health report
+      this.logger.debug('Generating health report');
       const healthReport = await healthReporter.generateReport(analysis);
       
       // Stop the spinner
       spinner.succeed('Report generated successfully!');
+      
+      this.logger.info('Report generation completed successfully');
       
       // Format output based on options
       if (args.options.json) {
@@ -52,6 +61,7 @@ export class ReportCommand extends BaseCommand {
       
     } catch (error) {
       spinner.fail('Report generation failed');
+      this.logger.error('Report command failed', error instanceof Error ? error : undefined);
       return this.handleError(error, 'Report generation');
     }
   }

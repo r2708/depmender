@@ -8,6 +8,7 @@ import { ReportCommand } from './commands/ReportCommand';
 import { FixCommand } from './commands/FixCommand';
 import { HelpSystem } from './utils/HelpSystem';
 import { CLIFormatter } from './utils/CLIFormatter';
+import { logger, LogLevel } from './utils/Logger';
 
 // Set up the main program with comprehensive help
 program
@@ -39,6 +40,12 @@ function registerCommand(command: CLICommand): void {
 
   cmd.action(async (options) => {
     try {
+      // Configure logging based on verbose flag
+      if (options.verbose) {
+        logger.setVerbose(true);
+        logger.info('Verbose logging enabled', 'CLI');
+      }
+
       const args: CommandArgs = {
         projectPath: path.resolve(options.path || '.'),
         options: {
@@ -50,15 +57,41 @@ function registerCommand(command: CLICommand): void {
         }
       };
 
+      logger.info(`Executing command: ${command.name}`, 'CLI', { 
+        projectPath: args.projectPath,
+        options: args.options 
+      });
+
       const result = await command.execute(args);
       
       if (!result.success) {
+        logger.error(`Command failed: ${command.name}`, undefined, 'CLI', { 
+          exitCode: result.exitCode 
+        });
         process.exit(result.exitCode);
       }
+
+      logger.info(`Command completed successfully: ${command.name}`, 'CLI');
     } catch (error) {
-      console.error(CLIFormatter.error(`Unexpected error: ${error instanceof Error ? error.message : String(error)}`));
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error(`Unexpected error in command: ${command.name}`, error instanceof Error ? error : undefined, 'CLI');
+      
+      console.error(CLIFormatter.error(`Unexpected error: ${errorMessage}`));
       console.error('\n💡 Try running with --verbose for more details');
       console.error('💡 Use --help for usage information');
+      
+      // In verbose mode, show recent logs
+      if (options.verbose) {
+        console.error('\n📋 Recent logs:');
+        const recentLogs = logger.getRecentLogs(10);
+        recentLogs.forEach(log => {
+          const timestamp = log.timestamp.toISOString().substring(11, 19);
+          const level = LogLevel[log.level];
+          const context = log.context ? `[${log.context}] ` : '';
+          console.error(`  ${timestamp} ${level} ${context}${log.message}`);
+        });
+      }
+      
       process.exit(1);
     }
   });

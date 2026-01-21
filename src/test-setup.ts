@@ -1,6 +1,7 @@
 // Jest test setup file
 // Configure fast-check for property-based testing
 import fc from 'fast-check';
+import { logger, LogLevel } from './utils/Logger';
 
 // Set global configuration for fast-check
 fc.configureGlobal({
@@ -11,3 +12,6 @@ fc.configureGlobal({
 
 // Global test timeout
 jest.setTimeout(30000);
+
+// Reduce logging noise in tests
+logger.setLevel(LogLevel.ERROR);

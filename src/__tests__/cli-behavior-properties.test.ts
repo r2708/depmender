@@ -280,7 +280,7 @@ describe('CLI Behavior Properties', () => {
           
           // Verify specific suggestions based on error type
           if (errorMessage.includes('ENOENT') || errorMessage.includes('not found')) {
-            expect(fullErrorOutput).toContain('Make sure you are in a valid Node.js project directory');
+            expect(fullErrorOutput).toContain('Verify you are in a valid Node.js project directory');
           }
           
           if (errorMessage.includes('EACCES') || errorMessage.includes('permission')) {

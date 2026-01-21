@@ -177,6 +177,7 @@ export interface HealthReport {
   securityIssues: SecurityIssue[];
   peerConflicts: PeerConflict[];
   recommendations: Recommendation[];
+  projectInfo: ProjectInfo;
 }
 
 // Scanner Interfaces

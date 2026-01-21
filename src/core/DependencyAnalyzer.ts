@@ -26,6 +26,7 @@ import {
 } from '../scanners';
 import { HealthReporter } from '../reporters';
 import { SuggestionEngine } from '../fixers/SuggestionEngine';
+import { logger } from '../utils/Logger';
 
 /**
  * Main dependency analyzer that orchestrates all scanners and calculates health scores
@@ -34,39 +35,53 @@ export class DependencyAnalyzer implements IDependencyAnalyzer {
   private scannerRegistry: ScannerRegistry;
   private healthReporter: HealthReporter;
   private suggestionEngine: SuggestionEngine;
+  private logger = logger.child('DependencyAnalyzer');
 
   constructor() {
     this.scannerRegistry = new ScannerRegistry();
     this.healthReporter = new HealthReporter();
     this.suggestionEngine = new SuggestionEngine();
     this.initializeScanners();
+    this.logger.info('DependencyAnalyzer initialized');
   }
 
   /**
    * Initialize all available scanners
    */
   private initializeScanners(): void {
+    this.logger.debug('Initializing scanners');
+    
     this.scannerRegistry.register(new OutdatedScanner());
     this.scannerRegistry.register(new MissingScanner());
     this.scannerRegistry.register(new VersionMismatchScanner());
     this.scannerRegistry.register(new BrokenScanner());
     this.scannerRegistry.register(new PeerConflictScanner());
     this.scannerRegistry.register(new SecurityScanner());
+    
+    this.logger.info(`Initialized ${this.scannerRegistry.getCount()} scanners`);
   }
 
   /**
    * Analyzes a project and returns comprehensive analysis results
    */
   async analyze(projectPath: string): Promise<AnalysisResult> {
+    this.logger.info(`Starting analysis of project: ${projectPath}`);
+    
     try {
       // Create scan context
+      this.logger.debug('Creating scan context');
       const context = await ScanContextFactory.createContext(projectPath);
+      this.logger.info(`Detected package manager: ${context.packageManager.getType()}`);
       
       // Run all scanners
+      this.logger.debug('Running all scanners');
       const scanResults = await this.scannerRegistry.runAllScanners(context);
+      this.logger.info(`Completed scanning with ${scanResults.length} scanner results`);
       
       // Aggregate results with deduplication and validation
+      this.logger.debug('Aggregating scan results');
       const aggregatedResults = this.aggregateResults(scanResults);
+      this.logger.info(`Found ${aggregatedResults.issues.length} issues and ${aggregatedResults.securityVulnerabilities.length} security vulnerabilities`);
 
       // Create project info
       const projectInfo: ProjectInfo = {
@@ -77,19 +92,25 @@ export class DependencyAnalyzer implements IDependencyAnalyzer {
       };
 
       // Calculate health score
+      this.logger.debug('Calculating health score');
       const healthScore = this.calculateHealthScore(
         aggregatedResults.issues, 
         aggregatedResults.securityVulnerabilities
       );
+      this.logger.info(`Calculated health score: ${healthScore}/100`);
 
-      return {
+      const result: AnalysisResult = {
         healthScore,
         issues: aggregatedResults.issues,
         packageManager: context.packageManager.getType(),
         projectInfo,
         securityVulnerabilities: aggregatedResults.securityVulnerabilities
       };
+
+      this.logger.info('Analysis completed successfully');
+      return result;
     } catch (error) {
+      this.logger.error('Analysis failed', error instanceof Error ? error : undefined);
       throw new Error(`Analysis failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
@@ -101,6 +122,8 @@ export class DependencyAnalyzer implements IDependencyAnalyzer {
     issues: DependencyIssue[];
     securityVulnerabilities: SecurityIssue[];
   } {
+    this.logger.debug('Starting result aggregation');
+    
     const issues: DependencyIssue[] = [];
     const securityVulnerabilities: SecurityIssue[] = [];
     const seenIssues = new Set<string>();
@@ -109,9 +132,11 @@ export class DependencyAnalyzer implements IDependencyAnalyzer {
     for (const result of scanResults) {
       // Validate scan result structure
       if (!result || !Array.isArray(result.issues)) {
-        console.warn(`Invalid scan result from ${result?.scannerType || 'unknown'} scanner`);
+        this.logger.warn(`Invalid scan result from ${result?.scannerType || 'unknown'} scanner`);
         continue;
       }
+
+      this.logger.debug(`Processing ${result.issues.length} issues from ${result.scannerType} scanner`);
 
       // Aggregate dependency issues with deduplication
       for (const issue of result.issues) {
@@ -120,23 +145,29 @@ export class DependencyAnalyzer implements IDependencyAnalyzer {
           if (!seenIssues.has(issueKey)) {
             issues.push(issue);
             seenIssues.add(issueKey);
+          } else {
+            this.logger.verbose(`Duplicate issue filtered: ${issueKey}`);
           }
         } else {
-          console.warn(`Invalid dependency issue found:`, issue);
+          this.logger.warn(`Invalid dependency issue found`, { issue });
         }
       }
 
       // Aggregate security vulnerabilities with deduplication
       if (result.securityIssues && Array.isArray(result.securityIssues)) {
+        this.logger.debug(`Processing ${result.securityIssues.length} security issues from ${result.scannerType} scanner`);
+        
         for (const vulnerability of result.securityIssues) {
           if (this.isValidSecurityIssue(vulnerability)) {
             const vulnKey = this.createVulnerabilityKey(vulnerability);
             if (!seenVulnerabilities.has(vulnKey)) {
               securityVulnerabilities.push(vulnerability);
               seenVulnerabilities.add(vulnKey);
+            } else {
+              this.logger.verbose(`Duplicate vulnerability filtered: ${vulnKey}`);
             }
           } else {
-            console.warn(`Invalid security vulnerability found:`, vulnerability);
+            this.logger.warn(`Invalid security vulnerability found`, { vulnerability });
           }
         }
       }
@@ -146,6 +177,7 @@ export class DependencyAnalyzer implements IDependencyAnalyzer {
     issues.sort((a, b) => this.compareSeverity(a.severity, b.severity));
     securityVulnerabilities.sort((a, b) => this.compareSecuritySeverity(a.severity, b.severity));
 
+    this.logger.debug(`Aggregation complete: ${issues.length} issues, ${securityVulnerabilities.length} vulnerabilities`);
     return { issues, securityVulnerabilities };
   }
 
@@ -358,13 +390,12 @@ export class DependencyAnalyzer implements IDependencyAnalyzer {
   }
 
   /**
-   * Applies fixes to the project
-   * Note: This is a placeholder implementation - full fixing will be implemented in task 12
+   * Applies fixes to the project using the AutoFixer
    */
   async applyFixes(fixes: FixSuggestion[]): Promise<FixResult> {
-    // This is a minimal implementation to satisfy the interface
-    // Full implementation will be done in the Auto-Fixer task
-    throw new Error('Fix application not yet implemented - will be implemented in task 12');
+    // This method is not typically called directly - the FixCommand handles this
+    // But we provide a basic implementation for completeness
+    throw new Error('applyFixes should be called through the FixCommand, not directly on DependencyAnalyzer');
   }
 
   /**

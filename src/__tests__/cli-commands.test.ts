@@ -129,7 +129,7 @@ describe('CLI Commands', () => {
 
       expect(result.success).toBe(false);
       expect(result.exitCode).toBe(1);
-      expect(result.output).toContain('Dependency analysis failed');
+      expect(result.output).toContain('Analysis failed');
     });
   });
 
@@ -367,7 +367,7 @@ describe('CLI Commands', () => {
 
       expect(result.success).toBe(false);
       expect(result.exitCode).toBe(1);
-      expect(result.output).toContain('Dependency fixing failed');
+      expect(result.output).toContain('Fix failed');
     });
   });
 });

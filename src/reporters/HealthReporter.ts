@@ -33,7 +33,8 @@ export class HealthReporter implements IHealthReporter {
       outdatedPackages,
       securityIssues: analysis.securityVulnerabilities,
       peerConflicts,
-      recommendations
+      recommendations,
+      projectInfo: analysis.projectInfo
     };
   }
 
@@ -47,6 +48,12 @@ export class HealthReporter implements IHealthReporter {
     lines.push('='.repeat(60));
     lines.push('📊 DEPENDENCY HEALTH REPORT');
     lines.push('='.repeat(60));
+    lines.push('');
+
+    // Project Information
+    lines.push(`📦 Project: ${report.projectInfo.name}@${report.projectInfo.version}`);
+    lines.push(`📁 Path: ${report.projectInfo.path}`);
+    lines.push(`⚙️  Package Manager: ${report.projectInfo.packageManager}`);
     lines.push('');
 
     // Health Score with visual indicator
