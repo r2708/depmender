@@ -25,6 +25,7 @@ import {
   SecurityScanner
 } from '../scanners';
 import { HealthReporter } from '../reporters';
+import { SuggestionEngine } from '../fixers/SuggestionEngine';
 
 /**
  * Main dependency analyzer that orchestrates all scanners and calculates health scores
@@ -32,10 +33,12 @@ import { HealthReporter } from '../reporters';
 export class DependencyAnalyzer implements IDependencyAnalyzer {
   private scannerRegistry: ScannerRegistry;
   private healthReporter: HealthReporter;
+  private suggestionEngine: SuggestionEngine;
 
   constructor() {
     this.scannerRegistry = new ScannerRegistry();
     this.healthReporter = new HealthReporter();
+    this.suggestionEngine = new SuggestionEngine();
     this.initializeScanners();
   }
 
@@ -349,12 +352,9 @@ export class DependencyAnalyzer implements IDependencyAnalyzer {
 
   /**
    * Suggests fixes for detected issues
-   * Note: This is a placeholder implementation - full fixing will be implemented in task 11
    */
   async suggestFixes(analysis: AnalysisResult): Promise<FixSuggestion[]> {
-    // This is a minimal implementation to satisfy the interface
-    // Full implementation will be done in the Suggestion Engine task
-    throw new Error('Fix suggestions not yet implemented - will be implemented in task 11');
+    return await this.suggestionEngine.generateSuggestions(analysis);
   }
 
   /**

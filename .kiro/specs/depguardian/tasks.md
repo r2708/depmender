@@ -169,33 +169,33 @@ This implementation plan breaks down the Depguardian CLI tool into discrete, inc
 - [x] 10. Checkpoint - Analysis and Reporting Complete
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 11. Suggestion Engine Implementation
-  - [ ] 11.1 Implement SuggestionEngine class
+- [x] 11. Suggestion Engine Implementation
+  - [x] 11.1 Implement SuggestionEngine class
     - Create engine to generate smart recommendations
     - Implement safe update path recommendations
     - _Requirements: 3.1_
 
-  - [ ] 11.2 Write property test for update path recommendations
+  - [x] 11.2 Write property test for update path recommendations
     - **Property 14: Update path recommendations**
     - **Validates: Requirements 3.1**
 
-  - [ ] 11.3 Implement conflict resolution suggestions
+  - [x] 11.3 Implement conflict resolution suggestions
     - Add logic to suggest compatible version combinations
     - Implement breaking-change risk estimation
     - _Requirements: 3.2, 3.3_
 
-  - [ ] 11.4 Write property tests for conflict resolution and risk estimation
+  - [x] 11.4 Write property tests for conflict resolution and risk estimation
     - **Property 15: Conflict resolution suggestions**
     - **Property 16: Risk estimation correlation**
     - **Validates: Requirements 3.2, 3.3**
 
-  - [ ] 11.5 Implement peer dependency and version strategy suggestions
+  - [x] 11.5 Implement peer dependency and version strategy suggestions
     - Add peer dependency fix recommendations
     - Add downgrade/upgrade strategy suggestions
     - Implement safety-based prioritization
     - _Requirements: 3.4, 3.5, 3.6_
 
-  - [ ] 11.6 Write property tests for suggestion completeness
+  - [x] 11.6 Write property tests for suggestion completeness
     - **Property 17: Peer dependency fix suggestions**
     - **Property 18: Version strategy appropriateness**
     - **Property 19: Safety-based prioritization**
