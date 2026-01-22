@@ -22,7 +22,7 @@ export interface LogEntry {
 
 export class Logger {
   private static instance: Logger;
-  private logLevel: LogLevel = LogLevel.INFO;
+  private logLevel: LogLevel = LogLevel.ERROR; // Changed default from INFO to ERROR
   private logs: LogEntry[] = [];
   private maxLogs: number = 1000;
 
@@ -46,7 +46,14 @@ export class Logger {
    * Sets verbose mode (highest log level)
    */
   setVerbose(verbose: boolean): void {
-    this.logLevel = verbose ? LogLevel.VERBOSE : LogLevel.INFO;
+    this.logLevel = verbose ? LogLevel.VERBOSE : LogLevel.ERROR; // Changed from INFO to ERROR
+  }
+
+  /**
+   * Sets quiet mode (only errors)
+   */
+  setQuiet(quiet: boolean): void {
+    this.logLevel = quiet ? LogLevel.ERROR : LogLevel.INFO;
   }
 
   /**

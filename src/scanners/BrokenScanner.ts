@@ -43,6 +43,11 @@ export class BrokenScanner extends BaseDependencyScanner {
   ): Promise<DependencyIssue[]> {
     const issues: DependencyIssue[] = [];
     
+    // Skip invalid package names
+    if (!this.isValidPackageName(installedPackage.name)) {
+      return issues;
+    }
+    
     try {
       // Check if package directory exists
       const packageExists = await this.checkPackageDirectoryExists(installedPackage);
@@ -527,6 +532,47 @@ export class BrokenScanner extends BaseDependencyScanner {
     if (description.includes('Permission error')) return BrokenType.PERMISSION_ERROR;
     if (description.includes('Access error')) return BrokenType.ACCESS_ERROR;
     return BrokenType.ACCESS_ERROR; // Default
+  }
+
+  /**
+   * Validates if a package name is valid for npm operations
+   */
+  private isValidPackageName(packageName: string): boolean {
+    if (!packageName || typeof packageName !== 'string') {
+      return false;
+    }
+
+    // Skip system directories and invalid names
+    const invalidNames = [
+      '.bin',           // npm bin directory
+      '.cache',         // cache directory
+      '.staging',       // npm staging directory
+      '.package-lock.json', // lockfile backup
+      'node_modules',   // nested node_modules
+      '.DS_Store',      // macOS system file
+      'Thumbs.db'       // Windows system file
+    ];
+
+    if (invalidNames.includes(packageName)) {
+      return false;
+    }
+
+    // Check npm package name rules
+    if (packageName.length > 214) {
+      return false;
+    }
+
+    // Cannot start with . or _ (except scoped packages)
+    if (packageName.startsWith('.') && !packageName.startsWith('@')) {
+      return false;
+    }
+
+    // Cannot contain uppercase letters, spaces, or special characters
+    if (!/^(@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/.test(packageName)) {
+      return false;
+    }
+
+    return true;
   }
 }
 

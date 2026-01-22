@@ -99,6 +99,27 @@ export class PNPMAdapter extends BasePackageManagerAdapter {
   }
 
   /**
+   * Removes a package using pnpm
+   */
+  async removePackage(packageName: string): Promise<void> {
+    try {
+      const command = `pnpm remove ${packageName}`;
+      const { stdout, stderr } = await execAsync(command, {
+        cwd: this.projectPath,
+        timeout: 60000
+      });
+
+      if (stderr && !stderr.includes('WARN')) {
+        console.warn(`PNPM remove warning: ${stderr}`);
+      }
+
+      console.log(`Removed corrupted package ${packageName} (preparing for reinstall)`);
+    } catch (error: any) {
+      throw new Error(`Failed to remove corrupted ${packageName} with pnpm: ${error.message}`);
+    }
+  }
+
+  /**
    * Regenerates pnpm-lock.yaml by removing it and running pnpm install
    */
   async regenerateLockfile(): Promise<void> {

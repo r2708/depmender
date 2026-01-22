@@ -214,23 +214,7 @@ export class AutoFixer implements IAutoFixer {
    * Removes a package using the appropriate package manager
    */
   private async removePackage(packageName: string): Promise<void> {
-    // This is a simplified implementation - in a real scenario,
-    // we would need to execute the appropriate package manager command
-    const packageManagerType = this.packageManagerAdapter.getType();
-    
-    switch (packageManagerType) {
-      case PackageManagerType.NPM:
-        // In a real implementation, we would execute: npm uninstall packageName
-        throw new Error('Package removal not yet implemented for npm');
-      case PackageManagerType.YARN:
-        // In a real implementation, we would execute: yarn remove packageName
-        throw new Error('Package removal not yet implemented for yarn');
-      case PackageManagerType.PNPM:
-        // In a real implementation, we would execute: pnpm remove packageName
-        throw new Error('Package removal not yet implemented for pnpm');
-      default:
-        throw new Error(`Unsupported package manager: ${packageManagerType}`);
-    }
+    await this.packageManagerAdapter.removePackage(packageName);
   }
 
   /**

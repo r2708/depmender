@@ -16,20 +16,16 @@ export class FixCommand extends BaseCommand {
   private logger = logger.child('FixCommand');
 
   async execute(args: CommandArgs): Promise<CommandResult> {
-    this.logger.info('Starting fix command execution');
-    
     const spinner = ora('Preparing to fix dependency issues...').start();
     
     try {
       // Initialize components
-      this.logger.debug('Initializing dependency analyzer');
       const analyzer = new DependencyAnalyzer();
       
       // Show progress for long-running operations
       spinner.text = 'Analyzing project dependencies...';
       
       // Perform the analysis first
-      this.logger.info(`Analyzing project at: ${args.projectPath}`);
       const analysis = await analyzer.analyze(args.projectPath);
       
       // Check if there are any issues to fix
@@ -37,11 +33,8 @@ export class FixCommand extends BaseCommand {
         spinner.succeed('No issues found to fix!');
         const output = '✅ Your project dependencies are healthy. No fixes needed.';
         console.log(output);
-        this.logger.info('No issues found to fix');
         return this.createSuccessResult(output);
       }
-      
-      this.logger.info(`Found ${analysis.issues.length} issues and ${analysis.securityVulnerabilities.length} vulnerabilities to potentially fix`);
       
       spinner.text = 'Generating fix suggestions...';
       
@@ -52,8 +45,6 @@ export class FixCommand extends BaseCommand {
       const autoFixable = fixSuggestions.filter(fix => 
         fix.risk !== 'critical' && fix.actions.length > 0
       );
-      
-      this.logger.info(`Generated ${fixSuggestions.length} suggestions, ${autoFixable.length} are auto-fixable`);
       
       if (autoFixable.length === 0) {
         spinner.warn('No automatically fixable issues found');
@@ -69,7 +60,6 @@ export class FixCommand extends BaseCommand {
         if (!shouldProceed) {
           const output = '❌ Fix operation cancelled by user.';
           console.log(output);
-          this.logger.info('Fix operation cancelled by user');
           return this.createSuccessResult(output);
         }
         spinner.start('Applying fixes...');
@@ -78,33 +68,28 @@ export class FixCommand extends BaseCommand {
       spinner.text = 'Creating backup...';
       
       // Create scan context to get package manager adapter
-      this.logger.debug('Creating scan context for package manager adapter');
       const context = await ScanContextFactory.createContext(args.projectPath);
       const autoFixer = new AutoFixer(args.projectPath, context.packageManager);
       
       spinner.text = 'Applying fixes...';
       
       // Apply the fixes
-      this.logger.info(`Applying ${autoFixable.length} fixes`);
       const fixResult = await autoFixer.applyFixes(autoFixable);
       
       if (fixResult.success) {
         spinner.succeed(`Successfully applied ${fixResult.appliedFixes.length} fixes!`);
         const output = this.formatFixResults(fixResult);
         console.log(output);
-        this.logger.info(`Successfully applied ${fixResult.appliedFixes.length} fixes`);
         return this.createSuccessResult(output);
       } else {
         spinner.fail('Some fixes failed to apply');
         const output = this.formatFixErrors(fixResult);
         console.log(output);
-        this.logger.warn(`Fix operation partially failed: ${fixResult.errors.length} errors`);
         return this.createErrorResult(output);
       }
       
     } catch (error) {
       spinner.fail('Fix operation failed');
-      this.logger.error('Fix command failed', error instanceof Error ? error : undefined);
       return this.handleError(error, 'Dependency fixing');
     }
   }

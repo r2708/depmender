@@ -220,6 +220,7 @@ export interface PackageManagerAdapter {
   getInstalledPackages(projectPath: string): Promise<InstalledPackage[]>;
   installPackage(packageName: string, version?: string): Promise<void>;
   updatePackage(packageName: string, version: string): Promise<void>;
+  removePackage(packageName: string): Promise<void>;
   regenerateLockfile(): Promise<void>;
 }
 

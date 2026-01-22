@@ -29,6 +29,7 @@ function registerCommand(command: CLICommand): void {
   cmd.option('-p, --path <path>', 'project path to analyze', '.');
   cmd.option('--json', 'output results in JSON format');
   cmd.option('--verbose', 'enable verbose output');
+  cmd.option('--quiet', 'suppress all logs except errors');
   
   // Add fix-specific options
   if (command.name === 'fix') {
@@ -40,10 +41,15 @@ function registerCommand(command: CLICommand): void {
 
   cmd.action(async (options) => {
     try {
-      // Configure logging based on verbose flag
-      if (options.verbose) {
+      // Configure logging based on flags
+      if (options.quiet) {
+        logger.setQuiet(true);
+      } else if (options.verbose) {
         logger.setVerbose(true);
         logger.info('Verbose logging enabled', 'CLI');
+      } else {
+        // Default: only show errors and warnings, no info logs
+        logger.setLevel(LogLevel.ERROR);
       }
 
       const args: CommandArgs = {
@@ -51,6 +57,7 @@ function registerCommand(command: CLICommand): void {
         options: {
           json: options.json || false,
           verbose: options.verbose || false,
+          quiet: options.quiet || false,
           yes: options.yes || false,
           y: options.y || false,
           ...options

@@ -42,7 +42,6 @@ export class DependencyAnalyzer implements IDependencyAnalyzer {
     this.healthReporter = new HealthReporter();
     this.suggestionEngine = new SuggestionEngine();
     this.initializeScanners();
-    this.logger.info('DependencyAnalyzer initialized');
   }
 
   /**
@@ -57,31 +56,24 @@ export class DependencyAnalyzer implements IDependencyAnalyzer {
     this.scannerRegistry.register(new BrokenScanner());
     this.scannerRegistry.register(new PeerConflictScanner());
     this.scannerRegistry.register(new SecurityScanner());
-    
-    this.logger.info(`Initialized ${this.scannerRegistry.getCount()} scanners`);
   }
 
   /**
    * Analyzes a project and returns comprehensive analysis results
    */
   async analyze(projectPath: string): Promise<AnalysisResult> {
-    this.logger.info(`Starting analysis of project: ${projectPath}`);
-    
     try {
       // Create scan context
       this.logger.debug('Creating scan context');
       const context = await ScanContextFactory.createContext(projectPath);
-      this.logger.info(`Detected package manager: ${context.packageManager.getType()}`);
       
       // Run all scanners
       this.logger.debug('Running all scanners');
       const scanResults = await this.scannerRegistry.runAllScanners(context);
-      this.logger.info(`Completed scanning with ${scanResults.length} scanner results`);
       
       // Aggregate results with deduplication and validation
       this.logger.debug('Aggregating scan results');
       const aggregatedResults = this.aggregateResults(scanResults);
-      this.logger.info(`Found ${aggregatedResults.issues.length} issues and ${aggregatedResults.securityVulnerabilities.length} security vulnerabilities`);
 
       // Create project info
       const projectInfo: ProjectInfo = {
@@ -97,7 +89,6 @@ export class DependencyAnalyzer implements IDependencyAnalyzer {
         aggregatedResults.issues, 
         aggregatedResults.securityVulnerabilities
       );
-      this.logger.info(`Calculated health score: ${healthScore}/100`);
 
       const result: AnalysisResult = {
         healthScore,
@@ -107,7 +98,6 @@ export class DependencyAnalyzer implements IDependencyAnalyzer {
         securityVulnerabilities: aggregatedResults.securityVulnerabilities
       };
 
-      this.logger.info('Analysis completed successfully');
       return result;
     } catch (error) {
       this.logger.error('Analysis failed', error instanceof Error ? error : undefined);

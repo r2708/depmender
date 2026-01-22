@@ -112,6 +112,18 @@ export class ScanCommand extends BaseCommand {
       lines.push('');
     }
     
+    // Available commands with descriptions
+    lines.push(CLIFormatter.sectionHeader('🛠️  Available Commands'));
+    const commands = [
+      `${CLIFormatter.command('depmender report')} - Generate detailed health report with issue breakdown`,
+      `${CLIFormatter.command('depmender fix')} - Apply automated fixes for detected issues`,
+      `${CLIFormatter.command('depmender help')} - Show comprehensive help and usage information`,
+      `${CLIFormatter.command('depmender examples')} - View usage examples and common workflows`,
+      `${CLIFormatter.command('depmender troubleshooting')} - Get help with common problems`
+    ];
+    lines.push(CLIFormatter.bulletList(commands));
+    lines.push('');
+    
     // Next steps with enhanced formatting
     lines.push(CLIFormatter.sectionHeader('💡 Next Steps'));
     const nextSteps = [

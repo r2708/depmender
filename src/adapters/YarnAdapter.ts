@@ -90,6 +90,27 @@ export class YarnAdapter extends BasePackageManagerAdapter {
   }
 
   /**
+   * Removes a package using yarn
+   */
+  async removePackage(packageName: string): Promise<void> {
+    try {
+      const command = `yarn remove ${packageName}`;
+      const { stdout, stderr } = await execAsync(command, {
+        cwd: this.projectPath,
+        timeout: 60000
+      });
+
+      if (stderr && !stderr.includes('warning')) {
+        console.warn(`Yarn remove warning: ${stderr}`);
+      }
+
+      console.log(`Removed corrupted package ${packageName} (preparing for reinstall)`);
+    } catch (error: any) {
+      throw new Error(`Failed to remove corrupted ${packageName} with yarn: ${error.message}`);
+    }
+  }
+
+  /**
    * Regenerates yarn.lock by removing it and running yarn install
    */
   async regenerateLockfile(): Promise<void> {

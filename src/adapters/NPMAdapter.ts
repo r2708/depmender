@@ -55,7 +55,7 @@ export class NPMAdapter extends BasePackageManagerAdapter {
     const packageSpec = version ? `${packageName}@${version}` : packageName;
     
     try {
-      const command = `npm install ${packageSpec}`;
+      const command = `npm install ${packageSpec} --legacy-peer-deps`;
       const { stdout, stderr } = await execAsync(command, {
         cwd: this.projectPath,
         timeout: 60000 // 60 second timeout
@@ -65,9 +65,9 @@ export class NPMAdapter extends BasePackageManagerAdapter {
         console.warn(`NPM install warning: ${stderr}`);
       }
 
-      console.log(`Successfully installed ${packageSpec}`);
+      console.log(`Successfully reinstalled ${packageSpec}`);
     } catch (error: any) {
-      throw new Error(`Failed to install ${packageSpec}: ${error.message}`);
+      throw new Error(`Failed to reinstall ${packageSpec}: ${error.message}`);
     }
   }
 
@@ -78,7 +78,8 @@ export class NPMAdapter extends BasePackageManagerAdapter {
     const packageSpec = `${packageName}@${version}`;
     
     try {
-      const command = `npm update ${packageSpec}`;
+      // Use npm install instead of npm update for specific versions
+      const command = `npm install ${packageSpec} --legacy-peer-deps`;
       const { stdout, stderr } = await execAsync(command, {
         cwd: this.projectPath,
         timeout: 60000
@@ -91,6 +92,27 @@ export class NPMAdapter extends BasePackageManagerAdapter {
       console.log(`Successfully updated ${packageSpec}`);
     } catch (error: any) {
       throw new Error(`Failed to update ${packageSpec}: ${error.message}`);
+    }
+  }
+
+  /**
+   * Removes a package using npm
+   */
+  async removePackage(packageName: string): Promise<void> {
+    try {
+      const command = `npm uninstall ${packageName} --legacy-peer-deps`;
+      const { stdout, stderr } = await execAsync(command, {
+        cwd: this.projectPath,
+        timeout: 60000
+      });
+
+      if (stderr && !stderr.includes('npm WARN')) {
+        console.warn(`NPM remove warning: ${stderr}`);
+      }
+
+      console.log(`Removed corrupted package ${packageName} (preparing for reinstall)`);
+    } catch (error: any) {
+      throw new Error(`Failed to remove corrupted ${packageName}: ${error.message}`);
     }
   }
 

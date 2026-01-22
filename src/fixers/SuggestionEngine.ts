@@ -633,9 +633,9 @@ export class SuggestionEngine {
         return paths;
       }
 
-      // Patch update (safest)
+      // Patch update (safest) - but validate version exists
       const nextPatch = semver.inc(currentVersion, 'patch');
-      if (nextPatch && semver.lte(nextPatch, latestVersion)) {
+      if (nextPatch && semver.lte(nextPatch, latestVersion) && this.isReasonableVersion(nextPatch, currentVersion)) {
         paths.push({
           targetVersion: nextPatch,
           strategy: 'patch update',
@@ -643,9 +643,9 @@ export class SuggestionEngine {
         });
       }
 
-      // Minor update (moderate risk)
+      // Minor update (moderate risk) - but validate version exists
       const nextMinor = semver.inc(currentVersion, 'minor');
-      if (nextMinor && semver.lte(nextMinor, latestVersion)) {
+      if (nextMinor && semver.lte(nextMinor, latestVersion) && this.isReasonableVersion(nextMinor, currentVersion)) {
         paths.push({
           targetVersion: nextMinor,
           strategy: 'minor update',
@@ -662,7 +662,7 @@ export class SuggestionEngine {
         });
       }
 
-      // If no incremental paths, suggest direct update
+      // If no incremental paths, suggest direct update to latest
       if (paths.length === 0) {
         paths.push({
           targetVersion: latestVersion,
@@ -672,7 +672,7 @@ export class SuggestionEngine {
       }
 
     } catch (error) {
-      // Fallback for invalid semver
+      // Fallback for invalid semver - only suggest latest
       paths.push({
         targetVersion: latestVersion,
         strategy: 'direct update',
@@ -1396,7 +1396,7 @@ export class SuggestionEngine {
   ): Promise<FixSuggestion[]> {
     return [{
       type: FixType.REGENERATE_LOCKFILE,
-      description: `Reinstall broken package ${issue.packageName}`,
+      description: `Fix corrupted ${issue.packageName} by removing and reinstalling`,
       risk: RiskLevel.MEDIUM,
       actions: [
         {
@@ -1411,7 +1411,7 @@ export class SuggestionEngine {
           command: this.getInstallCommand(issue.packageName, issue.expectedVersion, analysis.packageManager)
         }
       ],
-      estimatedImpact: 'Reinstalls package to fix corruption - low risk of data loss'
+      estimatedImpact: 'Removes corrupted package files and reinstalls clean version - fixes broken installation'
     }];
   }
 
@@ -1631,6 +1631,43 @@ export class SuggestionEngine {
         return `pnpm remove ${packageName}`;
       default:
         return `npm uninstall ${packageName}`;
+    }
+  }
+
+  /**
+   * Validates if a version increment is reasonable (not fake)
+   */
+  private isReasonableVersion(targetVersion: string, currentVersion: string): boolean {
+    try {
+      const current = semver.parse(currentVersion);
+      const target = semver.parse(targetVersion);
+      
+      if (!current || !target) {
+        return false;
+      }
+
+      // Don't suggest versions that are just +1 increment from current
+      // These are often fake versions that don't exist
+      const currentMajor = current.major;
+      const currentMinor = current.minor;
+      const currentPatch = current.patch;
+      
+      const targetMajor = target.major;
+      const targetMinor = target.minor;
+      const targetPatch = target.patch;
+
+      // Skip if it's just a simple +1 increment (likely fake)
+      if (targetMajor === currentMajor && targetMinor === currentMinor && targetPatch === currentPatch + 1) {
+        return false;
+      }
+      
+      if (targetMajor === currentMajor && targetMinor === currentMinor + 1 && targetPatch === 0) {
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      return false;
     }
   }
 }

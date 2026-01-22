@@ -23,6 +23,7 @@ export abstract class BasePackageManagerAdapter implements PackageManagerAdapter
   abstract readLockfile(projectPath: string): Promise<Lockfile>;
   abstract installPackage(packageName: string, version?: string): Promise<void>;
   abstract updatePackage(packageName: string, version: string): Promise<void>;
+  abstract removePackage(packageName: string): Promise<void>;
   abstract regenerateLockfile(): Promise<void>;
 
   /**
