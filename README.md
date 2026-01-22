@@ -1,15 +1,10 @@
 # DepMender
 
-A CLI tool that scans JavaScript/TypeScript projects for dependency issues and fixes them.
+A CLI tool that scans JavaScript/TypeScript projects for dependency issues and fixes them automatically.
 
-## Features
+## What it does
 
-- **Dependency Scanner**: Detects outdated, missing, broken, and conflicting dependencies
-- **Health Reporting**: Comprehensive reports with health scores (0-100)
-- **Smart Suggestions**: Intelligent recommendations with risk assessment
-- **Auto-Fix System**: Automated fixes with backup and verification
-- **Multi-Package Manager**: Supports npm, yarn, and pnpm
-- **Security Analysis**: Vulnerability detection and prioritization
+DepMender helps you maintain healthy dependencies by scanning your project for issues like outdated packages, broken installations, missing dependencies, and security vulnerabilities, then automatically fixes them.
 
 ## Installation
 
@@ -17,36 +12,52 @@ A CLI tool that scans JavaScript/TypeScript projects for dependency issues and f
 npm install -g depmender
 ```
 
-## Usage
+## Commands
+
+### `depmender scan`
+Analyzes your project dependencies and shows health overview.
 
 ```bash
-# Scan project dependencies
-depmender scan
-
-# Generate detailed health report
-depmender report
-
-# Apply automated fixes
-depmender fix
+depmender scan                    # Scan current directory
+depmender scan --path ./frontend  # Scan specific directory
+depmender scan --json            # Get JSON output
 ```
 
-## Development
+### `depmender report`
+Generates detailed health report with issue breakdown.
 
 ```bash
-# Install dependencies
-npm install
+depmender report                  # Generate detailed report
+depmender report --json          # Export as JSON
+```
 
-# Build the project
-npm run build
+### `depmender fix`
+Automatically fixes detected issues with backup creation.
 
-# Run tests
-npm test
+```bash
+depmender fix                     # Interactive fix with prompts
+depmender fix --yes              # Auto-fix without confirmation
+```
 
-# Run tests with coverage
-npm run test:coverage
+### `depmender help`
+Shows help information.
 
-# Development mode with watch
-npm run dev
+```bash
+depmender help                   # General help
+```
+
+### `depmender examples`
+Shows usage examples.
+
+```bash
+depmender examples              # Show examples
+```
+
+### `depmender troubleshooting`
+Shows troubleshooting guide.
+
+```bash
+depmender troubleshooting       # Show troubleshooting
 ```
 
 ## License
