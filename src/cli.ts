@@ -14,7 +14,7 @@ import { logger, LogLevel } from './utils/Logger';
 program
   .name('depmender')
   .description('A CLI tool that scans JavaScript/TypeScript projects for dependency issues and fixes them')
-  .version('1.0.0')
+  .version('1.1.0')
   .addHelpText('after', '\n' + HelpSystem.getMainHelp());
 
 /**
