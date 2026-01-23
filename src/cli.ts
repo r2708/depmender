@@ -2,7 +2,7 @@
 
 import { program } from 'commander';
 import * as path from 'path';
-import { CLICommand, CommandArgs, CommandResult } from './core/types';
+import { CLICommand, CommandArgs } from './core/types';
 import { ScanCommand } from './commands/ScanCommand';
 import { ReportCommand } from './commands/ReportCommand';
 import { FixCommand } from './commands/FixCommand';
@@ -18,20 +18,20 @@ program
   .addHelpText('after', '\n' + HelpSystem.getMainHelp());
 
 /**
- * Registers a command with the CLI program
+ * Optimized command registration with streamlined option handling
  */
 function registerCommand(command: CLICommand): void {
   const cmd = program
     .command(command.name)
     .description(command.description);
 
-  // Add common options
-  cmd.option('-p, --path <path>', 'project path to analyze', '.');
-  cmd.option('--json', 'output results in JSON format');
-  cmd.option('--verbose', 'enable verbose output');
-  cmd.option('--quiet', 'suppress all logs except errors');
+  // Add common options efficiently
+  cmd.option('-p, --path <path>', 'project path to analyze', '.')
+     .option('--json', 'output results in JSON format')
+     .option('--verbose', 'enable verbose output')
+     .option('--quiet', 'suppress all logs except errors');
   
-  // Add fix-specific options
+  // Add fix-specific options conditionally
   if (command.name === 'fix') {
     cmd.option('-y, --yes', 'automatically confirm all fixes without prompting');
   }
@@ -41,26 +41,18 @@ function registerCommand(command: CLICommand): void {
 
   cmd.action(async (options) => {
     try {
-      // Configure logging based on flags
-      if (options.quiet) {
-        logger.setQuiet(true);
-      } else if (options.verbose) {
-        logger.setVerbose(true);
-        logger.info('Verbose logging enabled', 'CLI');
-      } else {
-        // Default: only show errors and warnings, no info logs
-        logger.setLevel(LogLevel.ERROR);
-      }
+      // Optimized logging configuration
+      configureLogging(options);
 
       const args: CommandArgs = {
         projectPath: path.resolve(options.path || '.'),
         options: {
-          json: options.json || false,
-          verbose: options.verbose || false,
-          quiet: options.quiet || false,
-          yes: options.yes || false,
-          y: options.y || false,
-          ...options
+          json: !!options.json,
+          verbose: !!options.verbose,
+          quiet: !!options.quiet,
+          yes: !!(options.yes || options.y),
+          y: !!options.y,
+          path: options.path || '.'
         }
       };
 
@@ -80,72 +72,83 @@ function registerCommand(command: CLICommand): void {
 
       logger.info(`Command completed successfully: ${command.name}`, 'CLI');
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error(`Unexpected error in command: ${command.name}`, error instanceof Error ? error : undefined, 'CLI');
-      
-      console.error(CLIFormatter.error(`Unexpected error: ${errorMessage}`));
-      console.error('\n💡 Try running with --verbose for more details');
-      console.error('💡 Use --help for usage information');
-      
-      // In verbose mode, show recent logs
-      if (options.verbose) {
-        console.error('\n📋 Recent logs:');
-        const recentLogs = logger.getRecentLogs(10);
-        recentLogs.forEach(log => {
-          const timestamp = log.timestamp.toISOString().substring(11, 19);
-          const level = LogLevel[log.level];
-          const context = log.context ? `[${log.context}] ` : '';
-          console.error(`  ${timestamp} ${level} ${context}${log.message}`);
-        });
-      }
-      
-      process.exit(1);
+      handleCommandError(error, command.name, options.verbose);
     }
   });
 }
 
 /**
- * Gets command-specific help text
+ * Optimized logging configuration
  */
-function getCommandHelp(commandName: string): string {
-  switch (commandName) {
-    case 'scan':
-      return HelpSystem.getScanHelp();
-    case 'report':
-      return HelpSystem.getReportHelp();
-    case 'fix':
-      return HelpSystem.getFixHelp();
-    default:
-      return '';
+function configureLogging(options: any): void {
+  if (options.quiet) {
+    logger.setQuiet(true);
+  } else if (options.verbose) {
+    logger.setVerbose(true);
+    logger.info('Verbose logging enabled', 'CLI');
+  } else {
+    // Default: only show errors and warnings, no info logs
+    logger.setLevel(LogLevel.ERROR);
   }
 }
 
-// Add additional help commands
+/**
+ * Centralized error handling
+ */
+function handleCommandError(error: unknown, commandName: string, verbose: boolean): void {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  logger.error(`Unexpected error in command: ${commandName}`, error instanceof Error ? error : undefined, 'CLI');
+  
+  console.error(CLIFormatter.error(`Unexpected error: ${errorMessage}`));
+  console.error('\n💡 Try running with --verbose for more details');
+  console.error('💡 Use --help for usage information');
+  
+  // In verbose mode, show recent logs
+  if (verbose) {
+    console.error('\n📋 Recent logs:');
+    const recentLogs = logger.getRecentLogs(10);
+    recentLogs.forEach(log => {
+      const timestamp = log.timestamp.toISOString().substring(11, 19);
+      const level = LogLevel[log.level];
+      const context = log.context ? `[${log.context}] ` : '';
+      console.error(`  ${timestamp} ${level} ${context}${log.message}`);
+    });
+  }
+  
+  process.exit(1);
+}
+
+/**
+ * Optimized command help lookup
+ */
+const HELP_COMMANDS: Record<string, () => string> = {
+  scan: () => HelpSystem.getScanHelp(),
+  report: () => HelpSystem.getReportHelp(),
+  fix: () => HelpSystem.getFixHelp(),
+  examples: () => HelpSystem.getExamplesHelp(),
+  troubleshooting: () => HelpSystem.getTroubleshootingHelp()
+};
+
+/**
+ * Gets command-specific help text efficiently
+ */
+function getCommandHelp(commandName: string): string {
+  return HELP_COMMANDS[commandName]?.() || '';
+}
+
+// Add additional help commands with optimized handling
 program
   .command('help')
   .description('Show comprehensive help information')
   .argument('[command]', 'show help for specific command')
   .action((command) => {
     if (command) {
-      switch (command) {
-        case 'scan':
-          console.log(HelpSystem.getScanHelp());
-          break;
-        case 'report':
-          console.log(HelpSystem.getReportHelp());
-          break;
-        case 'fix':
-          console.log(HelpSystem.getFixHelp());
-          break;
-        case 'examples':
-          console.log(HelpSystem.getExamplesHelp());
-          break;
-        case 'troubleshooting':
-          console.log(HelpSystem.getTroubleshootingHelp());
-          break;
-        default:
-          console.log(CLIFormatter.error(`Unknown command: ${command}`));
-          console.log('\nAvailable help topics: scan, report, fix, examples, troubleshooting');
+      const helpFunction = HELP_COMMANDS[command];
+      if (helpFunction) {
+        console.log(helpFunction());
+      } else {
+        console.log(CLIFormatter.error(`Unknown command: ${command}`));
+        console.log('\nAvailable help topics:', Object.keys(HELP_COMMANDS).join(', '));
       }
     } else {
       console.log(HelpSystem.getMainHelp());

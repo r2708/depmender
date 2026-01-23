@@ -19,6 +19,35 @@ import * as semver from 'semver';
  */
 export class SuggestionEngine {
   
+  // Performance optimization caches
+  private versionCache = new Map<string, semver.SemVer | null>();
+  private riskCache = new Map<string, RiskAssessment>();
+  
+  /**
+   * Cached version parsing to avoid redundant semver.parse() calls
+   */
+  private parseVersionCached(version: string): semver.SemVer | null {
+    if (!this.versionCache.has(version)) {
+      try {
+        this.versionCache.set(version, semver.parse(version));
+      } catch (error) {
+        this.versionCache.set(version, null);
+      }
+    }
+    return this.versionCache.get(version)!;
+  }
+
+  /**
+   * Cached risk assessment to avoid redundant calculations
+   */
+  private getRiskAssessmentCached(currentVersion: string, targetVersion: string, packageName: string): RiskAssessment {
+    const cacheKey = `${packageName}:${currentVersion}:${targetVersion}`;
+    if (!this.riskCache.has(cacheKey)) {
+      this.riskCache.set(cacheKey, this.getDetailedRiskAssessment(currentVersion, targetVersion, packageName));
+    }
+    return this.riskCache.get(cacheKey)!;
+  }
+
   /**
    * Generates fix suggestions for all detected issues in the analysis
    */
@@ -425,8 +454,8 @@ export class SuggestionEngine {
       if (!issue.currentVersion || !issue.expectedVersion) continue;
 
       try {
-        const current = semver.parse(issue.currentVersion);
-        const expected = semver.parse(issue.expectedVersion);
+        const current = this.parseVersionCached(issue.currentVersion);
+        const expected = this.parseVersionCached(issue.expectedVersion);
         
         if (!current || !expected) continue;
 
@@ -620,8 +649,8 @@ export class SuggestionEngine {
     const paths: Array<{ targetVersion: string; strategy: string; impact: string }> = [];
     
     try {
-      const current = semver.parse(currentVersion);
-      const latest = semver.parse(latestVersion);
+      const current = this.parseVersionCached(currentVersion);
+      const latest = this.parseVersionCached(latestVersion);
       
       if (!current || !latest) {
         // Fallback for non-semver versions
@@ -693,8 +722,8 @@ export class SuggestionEngine {
     packageName: string
   ): RiskLevel {
     try {
-      const current = semver.parse(currentVersion);
-      const target = semver.parse(targetVersion);
+      const current = this.parseVersionCached(currentVersion);
+      const target = this.parseVersionCached(targetVersion);
       
       if (!current || !target) {
         return RiskLevel.HIGH; // Unknown versions are risky
@@ -770,8 +799,8 @@ export class SuggestionEngine {
     const mitigations: string[] = [];
 
     try {
-      const current = semver.parse(currentVersion);
-      const target = semver.parse(targetVersion);
+      const current = this.parseVersionCached(currentVersion);
+      const target = this.parseVersionCached(targetVersion);
       
       if (!current || !target) {
         factors.push('Invalid semantic versioning detected');
@@ -886,7 +915,7 @@ export class SuggestionEngine {
 
       // Generate suggestions for each compatible version
       for (const version of compatibleVersions) {
-        const riskAssessment = this.getDetailedRiskAssessment(
+        const riskAssessment = this.getRiskAssessmentCached(
           issue.currentVersion,
           version,
           issue.packageName
@@ -1228,7 +1257,7 @@ export class SuggestionEngine {
 
     // Determine if we should upgrade or downgrade
     const shouldUpgrade = this.shouldUpgradeVersion(issue.currentVersion, issue.expectedVersion);
-    const riskAssessment = this.getDetailedRiskAssessment(
+    const riskAssessment = this.getRiskAssessmentCached(
       issue.currentVersion, 
       issue.expectedVersion, 
       issue.packageName
@@ -1252,7 +1281,7 @@ export class SuggestionEngine {
       if (riskAssessment.level === RiskLevel.HIGH || riskAssessment.level === RiskLevel.CRITICAL) {
         const intermediateVersions = this.findIntermediateVersions(issue.currentVersion, issue.expectedVersion);
         for (const version of intermediateVersions) {
-          const intermediateRisk = this.getDetailedRiskAssessment(issue.currentVersion, version, issue.packageName);
+          const intermediateRisk = this.getRiskAssessmentCached(issue.currentVersion, version, issue.packageName);
           suggestions.push({
             type: FixType.UPDATE_OUTDATED,
             description: `Intermediate upgrade: ${issue.packageName} to ${version} (step-by-step approach)`,
@@ -1301,8 +1330,8 @@ export class SuggestionEngine {
     const intermediateVersions: string[] = [];
     
     try {
-      const current = semver.parse(currentVersion);
-      const target = semver.parse(targetVersion);
+      const current = this.parseVersionCached(currentVersion);
+      const target = this.parseVersionCached(targetVersion);
       
       if (!current || !target) {
         return intermediateVersions;
@@ -1639,8 +1668,8 @@ export class SuggestionEngine {
    */
   private isReasonableVersion(targetVersion: string, currentVersion: string): boolean {
     try {
-      const current = semver.parse(currentVersion);
-      const target = semver.parse(targetVersion);
+      const current = this.parseVersionCached(currentVersion);
+      const target = this.parseVersionCached(targetVersion);
       
       if (!current || !target) {
         return false;

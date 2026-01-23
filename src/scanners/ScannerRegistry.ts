@@ -69,41 +69,55 @@ export class ScannerRegistry {
   }
 
   /**
-   * Runs all registered scanners
+   * Runs all registered scanners in parallel for better performance
    */
   async runAllScanners(context: ScanContext): Promise<ScanResult[]> {
-    const results: ScanResult[] = [];
+    const scanners = this.getAllScanners();
     
-    for (const scanner of this.getAllScanners()) {
+    // Run all scanners in parallel
+    const scanPromises = scanners.map(async (scanner) => {
       try {
-        const result = await scanner.scan(context);
-        results.push(result);
+        return await scanner.scan(context);
       } catch (error) {
         console.warn(`Scanner ${scanner.getScannerType()} failed:`, error);
-        // Continue with other scanners even if one fails
+        // Return empty result for failed scanners
+        return {
+          scannerType: scanner.getScannerType(),
+          issues: [],
+          securityIssues: []
+        } as ScanResult;
       }
-    }
+    });
     
-    return results;
+    const results = await Promise.all(scanPromises);
+    
+    // Filter out empty results from failed scanners
+    return results.filter(result => result.issues.length > 0 || (result.securityIssues && result.securityIssues.length > 0));
   }
 
   /**
-   * Runs scanners of specific types
+   * Runs scanners of specific types in parallel
    */
   async runScanners(scannerTypes: ScannerType[], context: ScanContext): Promise<ScanResult[]> {
-    const results: ScanResult[] = [];
-    
-    for (const scannerType of scannerTypes) {
+    // Run specified scanners in parallel
+    const scanPromises = scannerTypes.map(async (scannerType) => {
       try {
-        const result = await this.runScanner(scannerType, context);
-        results.push(result);
+        return await this.runScanner(scannerType, context);
       } catch (error) {
         console.warn(`Scanner ${scannerType} failed:`, error);
-        // Continue with other scanners even if one fails
+        // Return empty result for failed scanners
+        return {
+          scannerType,
+          issues: [],
+          securityIssues: []
+        } as ScanResult;
       }
-    }
+    });
     
-    return results;
+    const results = await Promise.all(scanPromises);
+    
+    // Filter out empty results from failed scanners
+    return results.filter(result => result.issues.length > 0 || (result.securityIssues && result.securityIssues.length > 0));
   }
 
   /**
