@@ -8,10 +8,11 @@
   },
   "scripts": {
     "build": "tsc",
+    "build:prod": "tsc --declaration false --declarationMap false --sourceMap false",
     "dev": "tsc --watch",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
-    "prepare": "npm run build"
+    "prepare": "npm run build:prod"
   },
   "keywords": [
     "dependency",
@@ -94,8 +95,7 @@
     "node": ">=16.0.0"
   },
   "files": [
-    "dist/**/*",
-    "README.md",
-    "LICENSE"
+    "dist/**/*.js",
+    "README.md"
   ]
 }
