@@ -5,12 +5,12 @@ A comprehensive CLI tool that scans JavaScript/TypeScript projects for dependenc
 ## What it does
 
 DepMender helps you maintain healthy dependencies by:
-- 🔍 **Scanning** for outdated packages, broken installations, and security vulnerabilities
-- 🔧 **Fixing** issues automatically with intelligent suggestions
-- 🏥 **Diagnosing** system health and project structure
-- 🧹 **Cleaning** unused dependencies to reduce bundle size
-- 👀 **Monitoring** changes in real-time with watch mode
-- ⚙️ **Configuring** behavior with flexible configuration files
+- **Scanning** for outdated packages, broken installations, and security vulnerabilities
+- **Fixing** issues automatically with intelligent suggestions
+- **Diagnosing** system health and project structure
+- **Cleaning** unused dependencies to reduce bundle size
+- **Monitoring** changes in real-time with watch mode
+- **Configuring** behavior with flexible configuration files
 
 ## Installation
 
@@ -85,13 +85,13 @@ depmender doctor                  # Full system health check
 ```
 
 **What it checks:**
-- ✅ Node.js environment and version compatibility
-- ✅ Project structure (package.json, lockfiles, node_modules)
-- ✅ Package manager health and configuration
-- ✅ Dependency analysis (duplicates, large packages)
-- ✅ Performance metrics (install time, disk usage)
-- ✅ Security audit results
-- 💡 Personalized recommendations
+- Node.js environment and version compatibility
+- Project structure (package.json, lockfiles, node_modules)
+- Package manager health and configuration
+- Dependency analysis (duplicates, large packages)
+- Performance metrics (install time, disk usage)
+- Security audit results
+- Personalized recommendations
 
 #### `depmender clean`
 Find and remove unused dependencies to reduce bundle size.
@@ -102,10 +102,10 @@ depmender clean --confirm         # Actually remove unused packages
 ```
 
 **Features:**
-- 🔍 Scans source code for actual imports/requires
-- 🛡️ Protects essential dependencies (build tools, linters)
-- 📊 Shows potential space savings
-- ⚠️ Safe removal with dependency analysis
+- Scans source code for actual imports/requires
+- Protects essential dependencies (build tools, linters)
+- Shows potential space savings
+- Safe removal with dependency analysis
 
 #### `depmender watch`
 Monitor project files and run dependency checks automatically.
@@ -119,11 +119,11 @@ depmender watch --auto-fix        # Automatically fix issues
 ```
 
 **Features:**
-- 👀 Real-time file monitoring (package.json, lockfiles)
-- 🔄 Automatic scans on changes
-- 🔔 Desktop notifications for critical issues
-- 🌐 Webhook integration for CI/CD
-- 🔧 Optional auto-fixing
+- Real-time file monitoring (package.json, lockfiles)
+- Automatic scans on changes
+- Desktop notifications for critical issues
+- Webhook integration for CI/CD
+- Optional auto-fixing
 
 #### `depmender init`
 Initialize depmender configuration file.
@@ -134,10 +134,10 @@ depmender init --force           # Overwrite existing config
 ```
 
 **Creates:** `depmender.config.js` with customizable options:
-- 📋 Scanning rules (max outdated days, allowed vulnerabilities)
-- 🔧 Auto-fix settings (risk levels, confirmations)
-- 🎨 Output formatting (colors, verbosity)
-- 🔗 Integrations (Slack, GitHub)
+- Scanning rules (max outdated days, allowed vulnerabilities)
+- Auto-fix settings (risk levels, confirmations)
+- Output formatting (colors, verbosity)
+- Integrations (Slack, GitHub)
 
 ### Utility Commands
 
@@ -246,22 +246,21 @@ depmender watch --notify
 
 ## Package Manager Support
 
-- ✅ **npm** - Full support with package-lock.json
-- ✅ **Yarn** - Full support with yarn.lock  
-- ✅ **pnpm** - Full support with pnpm-lock.yaml
+- **npm** - Full support with package-lock.json
+- **Yarn** - Full support with yarn.lock  
+- **pnpm** - Full support with pnpm-lock.yaml
 
 ## Features
-
-- 🔍 **Comprehensive Scanning** - Detects 6 types of dependency issues
-- 🔧 **Intelligent Fixing** - Smart suggestions with risk assessment
-- 🏥 **System Diagnostics** - Complete health check for your environment
-- 🧹 **Dependency Cleanup** - Remove unused packages safely
-- 👀 **Real-time Monitoring** - Watch mode with notifications
-- ⚙️ **Flexible Configuration** - Customize behavior per project
-- 📊 **Detailed Reporting** - JSON/HTML output for integration
-- 🛡️ **Security Focus** - Vulnerability detection and fixing
-- 🚀 **Performance Optimized** - Parallel scanning, caching
-- 📦 **Lightweight** - Under 500KB package size
+- **Comprehensive Scanning** - Detects 6 types of dependency issues
+- **Intelligent Fixing** - Smart suggestions with risk assessment
+- **System Diagnostics** - Complete health check for your environment
+- **Dependency Cleanup** - Remove unused packages safely
+- **Real-time Monitoring** - Watch mode with notifications
+- **Flexible Configuration** - Customize behavior per project
+- **Detailed Reporting** - JSON/HTML output for integration
+- **Security Focus** - Vulnerability detection and fixing
+- **Performance Optimized** - Parallel scanning, caching
+- **Lightweight** - Under 500KB package size
 
 ## License
 
