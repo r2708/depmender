@@ -1,7 +1,7 @@
 {
   "name": "depmender",
   "version": "2.1.1",
-  "description": "A CLI tool that scans JavaScript/TypeScript projects for dependency issues and fixes them",
+  "description": "Comprehensive CLI tool for dependency management - scan, fix, clean, and monitor JavaScript/TypeScript project dependencies. Supports npm, yarn, pnpm with security audits, unused dependency cleanup, and real-time monitoring.",
   "main": "dist/index.js",
   "bin": {
     "depmender": "dist/cli.js"
@@ -16,18 +16,70 @@
   },
   "keywords": [
     "dependency",
+    "dependencies",
     "npm",
     "yarn",
     "pnpm",
-    "security",
-    "cli",
     "package-manager",
+    "dependency-management",
+    "dependency-checker",
+    "dependency-analyzer",
+    "dependency-scanner",
+    "security",
+    "security-audit",
     "vulnerability",
+    "vulnerability-scanner",
     "outdated",
-    "audit"
+    "outdated-packages",
+    "audit",
+    "npm-audit",
+    "cli",
+    "cli-tool",
+    "command-line",
+    "devtools",
+    "developer-tools",
+    "nodejs",
+    "node",
+    "javascript",
+    "typescript",
+    "package-json",
+    "lockfile",
+    "node-modules",
+    "dependency-health",
+    "dependency-fix",
+    "auto-fix",
+    "dependency-cleanup",
+    "unused-dependencies",
+    "dependency-monitor",
+    "watch-mode",
+    "real-time-monitoring",
+    "project-health",
+    "code-quality",
+    "maintenance",
+    "automation",
+    "ci-cd",
+    "continuous-integration",
+    "build-tools",
+    "package-maintenance",
+    "npm tool",
+    "dependency manager",
+    "repair",
+    "package"
   ],
   "author": "Your Name",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/depmender.git"
+  },
+  "homepage": "https://github.com/yourusername/depmender#readme",
+  "bugs": {
+    "url": "https://github.com/yourusername/depmender/issues"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/yourusername"
+  },
   "dependencies": {
     "@eslint-community/eslint-utils": "^4.9.1",
     "@eslint-community/regexpp": "^4.12.2",
@@ -94,7 +146,8 @@
     "typescript": "^5.2.2"
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=16.0.0",
+    "npm": ">=7.0.0"
   },
   "files": [
     "dist/**/*.js",

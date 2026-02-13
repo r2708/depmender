@@ -1,0 +1,51 @@
+# Source files
+src/
+tsconfig.json
+.eslintrc.js
+
+# Tests
+tests/
+__tests__/
+*.test.ts
+*.spec.ts
+
+# Development files
+.git/
+.github/
+.vscode/
+.idea/
+
+# Documentation (keep README.md)
+CONTRIBUTING.md
+docs/
+
+# Build artifacts
+*.log
+*.tgz
+.DS_Store
+
+# Configuration
+.env
+.env.*
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Lock files (keep package-lock.json)
+yarn.lock
+pnpm-lock.yaml
+
+# Editor files
+*.swp
+*.swo
+*~
+
+# OS files
+Thumbs.db
+.DS_Store
