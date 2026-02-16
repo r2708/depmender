@@ -66,19 +66,11 @@
     "repair",
     "package"
   ],
-  "author": "Your Name",
+  "author": "Raj Khajanchi",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/depmender.git"
-  },
-  "homepage": "https://github.com/yourusername/depmender#readme",
-  "bugs": {
-    "url": "https://github.com/yourusername/depmender/issues"
-  },
-  "funding": {
-    "type": "github",
-    "url": "https://github.com/sponsors/yourusername"
+    "url": "https://github.com/r2708/depmender.git"
   },
   "dependencies": {
     "@eslint-community/eslint-utils": "^4.9.1",
