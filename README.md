@@ -300,46 +300,4 @@ We welcome contributions! Here's how you can help:
 4. **Improve Docs** - Help make documentation better
 5. **Share Feedback** - Let us know how you're using DepMender
 
-### Development Setup
-
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/depmender.git
-cd depmender
-
-# Install dependencies
-npm install
-
-# Build the project
-npm run build
-
-# Run locally
-node dist/cli.js --help
-```
-
-### Running Tests
-
-```bash
-npm test
-```
-
-## 📝 Changelog
-
-See [CHANGELOG.md](CHANGELOG.md) for version history and updates.
-
-## 🙏 Acknowledgments
-
-Built with ❤️ using TypeScript, Commander.js, and Chalk.
-
-Special thanks to all contributors and the open-source community.
-
-## 📧 Support
-
-- 📖 [Documentation](https://github.com/yourusername/depmender#readme)
-- 🐛 [Issue Tracker](https://github.com/yourusername/depmender/issues)
-- 💬 [Discussions](https://github.com/yourusername/depmender/discussions)
-- 📧 Email: support@depmender.dev
-
----
-
 **Made with ❤️ for the JavaScript/TypeScript community**
