@@ -1,6 +1,6 @@
 {
   "name": "depmender",
-  "version": "2.1.3",
+  "version": "2.1.4",
   "description": "Comprehensive CLI tool for dependency management - scan, fix, clean, and monitor JavaScript/TypeScript project dependencies. Supports npm, yarn, pnpm with security audits, unused dependency cleanup, and real-time monitoring.",
   "main": "dist/index.js",
   "bin": {
