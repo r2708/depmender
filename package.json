@@ -1,6 +1,6 @@
 {
   "name": "depmender",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Comprehensive CLI tool for dependency management - unified 'depmender fix' command handles all operations: scan, fix, install-missing, remove-unused, update-deps, dedupe, sync, resolve, and more. Supports npm, yarn, pnpm with security audits and real-time monitoring.",
   "main": "dist/index.js",
   "bin": {
