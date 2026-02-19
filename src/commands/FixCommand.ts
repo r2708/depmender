@@ -8,11 +8,27 @@ import ora from 'ora';
 
 /**
  * Fix command implementation
- * Requirement 6.2: Execute `depguardian fix` to automatically resolve detected issues
+ * Unified command that handles all dependency fixes:
+ * - install-missing: Install missing dependencies
+ * - remove-unused: Remove unused dependencies
+ * - dependency-sync: Sync dependencies across package.json and lockfile
+ * - version-fix/fix-versions: Fix version mismatches
+ * - update-deps: Update outdated dependencies
+ * - cleanup: Clean up broken installations
+ * - dedupe: Deduplicate dependencies
+ * - sort: Sort dependencies
+ * - validate: Validate dependency integrity
+ * - deep-scan: Deep scan for issues
+ * - repair: Repair broken packages
+ * - auto-fix: Automatically fix all issues
+ * - normalize: Normalize dependency structure
+ * - optimize: Optimize dependency tree
+ * - sync: Sync all dependency files
+ * - resolve: Resolve conflicts
  */
 export class FixCommand extends BaseCommand {
   name = 'fix';
-  description = 'Automatically fix detected dependency issues';
+  description = 'Automatically fix all dependency issues (install-missing, remove-unused, update-deps, dedupe, sync, resolve, and more)';
   private logger = logger.child('FixCommand');
 
   async execute(args: CommandArgs): Promise<CommandResult> {

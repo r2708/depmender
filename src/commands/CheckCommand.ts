@@ -6,13 +6,14 @@ import { ProgressIndicator } from '../utils/ProgressIndicator';
 import { logger } from '../utils/Logger';
 
 /**
- * Scan command implementation
- * Requirement 6.1: Execute `depmender scan` to analyze project dependencies
+ * Check command implementation
+ * Analyzes project dependencies and identifies issues
+ * Combines functionality of scan and doctor commands
  */
-export class ScanCommand extends BaseCommand {
-  name = 'scan';
-  description = 'Analyze project dependencies and identify issues';
-  private logger = logger.child('ScanCommand');
+export class CheckCommand extends BaseCommand {
+  name = 'check';
+  description = 'Check project dependencies and system health';
+  private logger = logger.child('CheckCommand');
 
   async execute(args: CommandArgs): Promise<CommandResult> {
     this.logger.info('Starting scan command execution');
@@ -66,7 +67,7 @@ export class ScanCommand extends BaseCommand {
     const lines: string[] = [];
     
     // Header with enhanced formatting
-    lines.push(CLIFormatter.header('🔍 DEPENDENCY SCAN RESULTS'));
+    lines.push(CLIFormatter.header('🔍 DEPENDENCY CHECK RESULTS'));
     lines.push('');
     
     // Project info with better formatting

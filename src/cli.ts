@@ -3,12 +3,10 @@
 import { program } from 'commander';
 import * as path from 'path';
 import { CLICommand, CommandArgs } from './core/types';
-import { ScanCommand } from './commands/ScanCommand';
+import { CheckCommand } from './commands/CheckCommand';
 import { ReportCommand } from './commands/ReportCommand';
 import { FixCommand } from './commands/FixCommand';
-import { DoctorCommand } from './commands/DoctorCommand';
-import { CleanCommand } from './commands/CleanCommand';
-import { WatchCommand } from './commands/WatchCommand';
+import { UpgradeCommand } from './commands/UpgradeCommand';
 import { InitCommand } from './commands/InitCommand';
 import { HelpSystem } from './utils/HelpSystem';
 import { CLIFormatter } from './utils/CLIFormatter';
@@ -35,23 +33,9 @@ function registerCommand(command: CLICommand): void {
      .option('--verbose', 'enable verbose output')
      .option('--quiet', 'suppress all logs except errors');
   
-  // Add fix-specific options conditionally
-  if (command.name === 'fix') {
-    cmd.option('-y, --yes', 'automatically confirm all fixes without prompting');
-  }
-
-  // Add clean-specific options
-  if (command.name === 'clean') {
-    cmd.option('--dry-run', 'show what would be removed without actually removing (default)')
-       .option('--confirm', 'actually remove the unused packages');
-  }
-
-  // Add watch-specific options
-  if (command.name === 'watch') {
-    cmd.option('--notify', 'enable desktop notifications')
-       .option('--webhook <url>', 'send results to webhook URL')
-       .option('--interval <time>', 'scan interval (e.g., 30s, 2m)', '5s')
-       .option('--auto-fix', 'automatically fix issues when found');
+  // Add fix and upgrade specific options conditionally
+  if (command.name === 'fix' || command.name === 'upgrade') {
+    cmd.option('-y, --yes', 'automatically confirm all actions without prompting');
   }
 
   // Add init-specific options
@@ -76,14 +60,6 @@ function registerCommand(command: CLICommand): void {
           yes: !!(options.yes || options.y),
           y: !!options.y,
           path: options.path || '.',
-          // Clean command options
-          dryRun: options.dryRun !== false, // Default to true
-          confirm: !!options.confirm,
-          // Watch command options
-          notify: !!options.notify,
-          webhook: options.webhook,
-          interval: options.interval,
-          autoFix: !!options.autoFix,
           // Init command options
           force: !!options.force
         }
@@ -155,12 +131,10 @@ function handleCommandError(error: unknown, commandName: string, verbose: boolea
  * Optimized command help lookup
  */
 const HELP_COMMANDS: Record<string, () => string> = {
-  scan: () => HelpSystem.getScanHelp(),
+  check: () => 'CHECK COMMAND\n  Analyze project dependencies and system health.\n  Identifies outdated packages, security vulnerabilities, and configuration issues.',
   report: () => HelpSystem.getReportHelp(),
   fix: () => HelpSystem.getFixHelp(),
-  doctor: () => 'DOCTOR COMMAND\n  Run comprehensive system health diagnostics.\n  Checks Node.js environment, project structure, dependencies, and more.',
-  clean: () => 'CLEAN COMMAND\n  Find and remove unused dependencies.\n  Use --dry-run to preview or --confirm to actually remove packages.',
-  watch: () => 'WATCH COMMAND\n  Monitor project files and run dependency checks automatically.\n  Supports notifications, webhooks, and auto-fixing.',
+  upgrade: () => 'UPGRADE COMMAND\n  Upgrade all dependencies to their latest versions.\n  Creates backups and provides detailed upgrade information.',
   init: () => 'INIT COMMAND\n  Initialize depmender configuration file.\n  Creates a sample config file with all available options.',
   examples: () => HelpSystem.getExamplesHelp(),
   troubleshooting: () => HelpSystem.getTroubleshootingHelp()
@@ -207,12 +181,10 @@ program
   });
 
 // Register main commands
-registerCommand(new ScanCommand());
+registerCommand(new CheckCommand());
 registerCommand(new ReportCommand());
 registerCommand(new FixCommand());
-registerCommand(new DoctorCommand());
-registerCommand(new CleanCommand());
-registerCommand(new WatchCommand());
+registerCommand(new UpgradeCommand());
 registerCommand(new InitCommand());
 
 // Export the registration function for use by specific commands

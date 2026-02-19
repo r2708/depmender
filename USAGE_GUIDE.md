@@ -2,6 +2,16 @@
 
 DepMender is a comprehensive CLI tool for analyzing, reporting, and fixing dependency issues in JavaScript/TypeScript projects. It supports npm, yarn, and pnpm package managers.
 
+## 5 Simple Commands
+
+DepMender provides just 5 commands you need to know:
+
+1. **check** - Analyze dependencies and system health
+2. **report** - Generate detailed health reports
+3. **fix** - Fix all dependency issues
+4. **upgrade** - Upgrade all dependencies to latest versions
+5. **init** - Initialize configuration file
+
 ## Installation & Setup
 
 ### Prerequisites
@@ -22,30 +32,30 @@ npm run build
 
 ## Basic Commands
 
-### 1. Scan Command
-Analyze your project's dependencies and get a quick overview of issues.
+### 1. Check Command
+Analyze your project's dependencies and system health (combines scan + doctor functionality).
 
 ```bash
-# Scan current directory
-node dist/cli.js scan
+# Check current directory
+node dist/cli.js check
 
-# Scan specific project
-node dist/cli.js scan --path ./my-project
+# Check specific project
+node dist/cli.js check --path ./my-project
 
-# Scan with JSON output
-node dist/cli.js scan --json
+# Check with JSON output
+node dist/cli.js check --json
 
-# Scan with verbose output
-node dist/cli.js scan --verbose
+# Check with verbose output
+node dist/cli.js check --verbose
 
-# Scan specific project with full path
-node dist/cli.js scan --path /full/path/to/project
+# Check specific project with full path
+node dist/cli.js check --path /full/path/to/project
 ```
 
 **Example Output:**
 ```
 ============================================================
-🔍 DEPENDENCY SCAN RESULTS
+🔍 DEPENDENCY CHECK RESULTS
 ============================================================
 
 📦 Project: my-app v1.0.0
@@ -138,7 +148,24 @@ Security Vulnerabilities: 1
 ```
 
 ### 3. Fix Command
-Automatically fix detected dependency issues.
+Unified command that automatically fixes all dependency issues.
+
+This single command handles all fix operations including:
+- **install-missing** - Install missing dependencies
+- **remove-unused** - Remove unused dependencies
+- **update-deps** - Update outdated packages
+- **version-fix/fix-versions** - Fix version mismatches
+- **dependency-sync/sync** - Sync package.json with lockfile
+- **cleanup** - Clean up broken installations
+- **dedupe** - Deduplicate dependencies
+- **sort** - Sort dependencies
+- **validate** - Validate dependency integrity
+- **deep-scan** - Deep scan for issues
+- **repair** - Repair broken packages
+- **auto-fix** - Automatically fix all issues
+- **normalize** - Normalize dependency structure
+- **optimize** - Optimize dependency tree
+- **resolve** - Resolve conflicts
 
 ```bash
 # Fix issues in current directory
@@ -168,8 +195,45 @@ node dist/cli.js fix --verbose
 
 🎉 Next Steps:
   • Test your application to ensure everything works
-  • Run `depmender scan` to verify all issues are resolved
+  • Run `depmender check` to verify all issues are resolved
   • Consider running your test suite
+```
+
+### 4. Upgrade Command
+Upgrade all dependencies to their latest versions.
+
+```bash
+# Upgrade dependencies in current directory
+node dist/cli.js upgrade
+
+# Upgrade dependencies in specific project
+node dist/cli.js upgrade --path ./my-project
+
+# Auto-confirm all upgrades (no prompts)
+node dist/cli.js upgrade --yes
+
+# Upgrade with verbose output
+node dist/cli.js upgrade --verbose
+```
+
+**Example Output:**
+```
+✅ UPGRADES APPLIED SUCCESSFULLY
+=====================================
+
+💾 Backup created: /path/to/project/package.json.backup
+
+📦 Upgraded 5 packages:
+  1. react: 17.0.2 → 18.2.0
+  2. typescript: 4.9.5 → 5.2.2
+  3. eslint: 8.45.0 → 8.52.0
+  4. webpack: 5.88.0 → 5.89.0
+  5. jest: 29.5.0 → 29.7.0
+
+🎉 Next Steps:
+  • Test your application to ensure everything works
+  • Run your test suite
+  • Run `depmender check` to verify all packages are healthy
 ```
 
 ## Advanced Usage
@@ -180,9 +244,10 @@ node dist/cli.js fix --verbose
 node dist/cli.js help
 
 # Command-specific help
-node dist/cli.js help scan
+node dist/cli.js help check
 node dist/cli.js help report
 node dist/cli.js help fix
+node dist/cli.js help upgrade
 
 # Usage examples
 node dist/cli.js examples
@@ -208,7 +273,7 @@ All commands support these options:
 ### 1. Quick Health Check
 ```bash
 # Get a quick overview of your project's dependency health
-node dist/cli.js scan
+node dist/cli.js check
 ```
 
 ### 2. Detailed Analysis
@@ -223,21 +288,27 @@ node dist/cli.js report --verbose
 node dist/cli.js fix --yes
 ```
 
-### 4. CI/CD Integration
+### 4. Upgrade All Dependencies
 ```bash
-# Generate JSON report for automated processing
-node dist/cli.js scan --json > scan-results.json
-
-# Check if project has critical issues (exit code indicates status)
-node dist/cli.js scan --json | jq '.issues[] | select(.severity == "critical")' | wc -l
+# Upgrade all packages to latest versions
+node dist/cli.js upgrade --yes
 ```
 
-### 5. Multiple Projects
+### 5. CI/CD Integration
+```bash
+# Generate JSON report for automated processing
+node dist/cli.js check --json > check-results.json
+
+# Check if project has critical issues (exit code indicates status)
+node dist/cli.js check --json | jq '.issues[] | select(.severity == "critical")' | wc -l
+```
+
+### 6. Multiple Projects
 ```bash
 # Analyze multiple projects
 for dir in project1 project2 project3; do
   echo "Analyzing $dir..."
-  node dist/cli.js scan --path ./$dir
+  node dist/cli.js check --path ./$dir
 done
 ```
 
@@ -328,14 +399,17 @@ The health score (0-100) is calculated based on:
 # Navigate to your project
 cd my-react-app
 
-# Run quick scan
-node /path/to/depmender/dist/cli.js scan
+# Run quick check
+node /path/to/depmender/dist/cli.js check
 
 # Get detailed report
 node /path/to/depmender/dist/cli.js report
 
 # Apply fixes
 node /path/to/depmender/dist/cli.js fix
+
+# Upgrade all dependencies
+node /path/to/depmender/dist/cli.js upgrade
 ```
 
 ### Example 2: CI/CD Integration
@@ -348,10 +422,10 @@ DEPMENDER_PATH="/path/to/depmender"
 
 echo "🔍 Checking dependencies for $PROJECT_PATH"
 
-# Run scan and capture results
-SCAN_RESULT=$(node $DEPMENDER_PATH/dist/cli.js scan --path $PROJECT_PATH --json)
-HEALTH_SCORE=$(echo $SCAN_RESULT | jq '.healthScore')
-CRITICAL_ISSUES=$(echo $SCAN_RESULT | jq '[.issues[] | select(.severity == "critical")] | length')
+# Run check and capture results
+CHECK_RESULT=$(node $DEPMENDER_PATH/dist/cli.js check --path $PROJECT_PATH --json)
+HEALTH_SCORE=$(echo $CHECK_RESULT | jq '.healthScore')
+CRITICAL_ISSUES=$(echo $CHECK_RESULT | jq '[.issues[] | select(.severity == "critical")] | length')
 
 echo "Health Score: $HEALTH_SCORE/100"
 echo "Critical Issues: $CRITICAL_ISSUES"
@@ -377,7 +451,7 @@ PROJECTS_DIR="./projects"
 for project in $PROJECTS_DIR/*/; do
   if [ -f "$project/package.json" ]; then
     echo "Analyzing $(basename $project)..."
-    node $DEPMENDER_PATH/dist/cli.js scan --path "$project" --json > "reports/$(basename $project)-report.json"
+    node $DEPMENDER_PATH/dist/cli.js check --path "$project" --json > "reports/$(basename $project)-report.json"
   fi
 done
 
@@ -391,7 +465,7 @@ echo "All reports generated in ./reports/"
 1. **"package.json not found"**
    ```bash
    # Make sure you're in the right directory or specify correct path
-   node dist/cli.js scan --path /correct/path/to/project
+   node dist/cli.js check --path /correct/path/to/project
    ```
 
 2. **"Permission denied"**
@@ -403,7 +477,7 @@ echo "All reports generated in ./reports/"
 3. **"Scanner failed"**
    ```bash
    # Run with verbose output to see detailed error information
-   node dist/cli.js scan --verbose
+   node dist/cli.js check --verbose
    ```
 
 4. **Network issues during analysis**
@@ -419,9 +493,10 @@ echo "All reports generated in ./reports/"
 node dist/cli.js --help
 
 # Get detailed help for specific commands
-node dist/cli.js help scan
+node dist/cli.js help check
 node dist/cli.js help report
 node dist/cli.js help fix
+node dist/cli.js help upgrade
 
 # Show usage examples
 node dist/cli.js examples

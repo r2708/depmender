@@ -8,32 +8,40 @@
 
 A comprehensive CLI tool that scans JavaScript/TypeScript projects for dependency issues and fixes them automatically. Features advanced diagnostics, unused dependency cleanup, real-time monitoring, and intelligent configuration management.
 
-## 📑 Table of Contents
-
-- [What it does](#what-it-does)
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Commands](#commands)
-  - [Core Commands](#core-commands)
-  - [Advanced Commands](#advanced-commands)
-  - [Utility Commands](#utility-commands)
-- [Configuration](#configuration)
-- [Global Options](#global-options)
-- [Workflows](#workflows)
-- [Package Manager Support](#package-manager-support)
-- [Features](#features)
-- [Contributing](#contributing)
-- [License](#license)
-
 ## What it does
 
-DepMender helps you maintain healthy dependencies by:
-- **Scanning** for outdated packages, broken installations, and security vulnerabilities
-- **Fixing** issues automatically with intelligent suggestions
-- **Diagnosing** system health and project structure
-- **Cleaning** unused dependencies to reduce bundle size
-- **Monitoring** changes in real-time with watch mode
-- **Configuring** behavior with flexible configuration files
+DepMender helps you maintain healthy dependencies with 5 simple commands:
+- **check** - Analyze dependencies and system health (replaces scan + doctor)
+- **report** - Generate detailed health reports
+- **fix** - Fix ALL issues with one command (install-missing, remove-unused, dedupe, sync, resolve, and more)
+- **upgrade** - Upgrade all dependencies to their latest versions
+- **init** - Initialize configuration file
+
+### Unified Fix Command
+
+Unlike other tools that require multiple commands for different operations, DepMender provides ONE command to handle everything:
+
+```bash
+depmender fix --yes
+```
+
+This single command replaces all of these standalone operations:
+- `install-missing` - Install missing dependencies
+- `remove-unused` - Remove unused dependencies
+- `dependency-sync` - Sync dependencies
+- `version-fix` / `fix-versions` - Fix version mismatches
+- `update-deps` - Update outdated packages
+- `cleanup` - Clean up broken installations
+- `dedupe` - Deduplicate dependencies
+- `sort` - Sort dependencies
+- `validate` - Validate integrity
+- `deep-scan` - Deep scan for issues
+- `repair` - Repair broken packages
+- `auto-fix` - Auto-fix all issues
+- `normalize` - Normalize structure
+- `optimize` - Optimize dependency tree
+- `sync` - Sync all files
+- `resolve` - Resolve conflicts
 
 ## Installation
 
@@ -47,38 +55,43 @@ npm install -g depmender
 # Initialize configuration (optional)
 depmender init
 
-# Run system health check
-depmender doctor
-
-# Scan for dependency issues
-depmender scan
+# Check project dependencies and system health
+depmender check
 
 # Get detailed report
 depmender report
 
-# Fix issues automatically
+# Fix ALL issues with one command
 depmender fix --yes
 
-# Clean unused dependencies
-depmender clean --dry-run
-
-# Monitor project in real-time
-depmender watch
+# Upgrade all dependencies to latest versions
+depmender upgrade --yes
 ```
 
 ## Commands
 
 ### Core Commands
 
-#### `depmender scan`
-Analyzes your project dependencies and shows health overview.
+#### `depmender check`
+Analyzes your project dependencies and system health (combines scan + doctor functionality).
 
 ```bash
-depmender scan                    # Scan current directory
-depmender scan --path ./frontend  # Scan specific directory
-depmender scan --json            # Get JSON output
-depmender scan --verbose         # Show detailed information
+depmender check                    # Check current directory
+depmender check --path ./frontend  # Check specific directory
+depmender check --json            # Get JSON output
+depmender check --verbose         # Show detailed information
 ```
+
+**What it checks:**
+- Outdated packages and available updates
+- Missing dependencies
+- Broken installations
+- Security vulnerabilities
+- Peer dependency conflicts
+- Version mismatches
+- Node.js environment and version compatibility
+- Project structure (package.json, lockfiles, node_modules)
+- Package manager health
 
 #### `depmender report`
 Generates detailed health report with issue breakdown.
@@ -90,7 +103,18 @@ depmender report --verbose       # Include extra details
 ```
 
 #### `depmender fix`
-Automatically fixes detected issues with backup creation.
+Unified command that automatically fixes all dependency issues with backup creation.
+
+This single command handles all fix operations:
+- Install missing dependencies
+- Remove unused dependencies  
+- Update outdated packages
+- Fix version mismatches
+- Resolve peer conflicts
+- Deduplicate dependencies
+- Sync package.json with lockfile
+- Repair broken installations
+- Normalize and optimize dependency tree
 
 ```bash
 depmender fix                     # Interactive fix with prompts
@@ -98,55 +122,21 @@ depmender fix --yes              # Auto-fix without confirmation
 depmender fix --path ./backend   # Fix specific project
 ```
 
-### Advanced Commands
-
-#### `depmender doctor`
-Run comprehensive system health diagnostics.
+#### `depmender upgrade`
+Upgrade all dependencies to their latest versions.
 
 ```bash
-depmender doctor                  # Full system health check
-```
-
-**What it checks:**
-- Node.js environment and version compatibility
-- Project structure (package.json, lockfiles, node_modules)
-- Package manager health and configuration
-- Dependency analysis (duplicates, large packages)
-- Performance metrics (install time, disk usage)
-- Security audit results
-- Personalized recommendations
-
-#### `depmender clean`
-Find and remove unused dependencies to reduce bundle size.
-
-```bash
-depmender clean --dry-run         # Preview what would be removed (default)
-depmender clean --confirm         # Actually remove unused packages
+depmender upgrade                 # Interactive upgrade with prompts
+depmender upgrade --yes          # Auto-upgrade without confirmation
+depmender upgrade --path ./api   # Upgrade specific project
 ```
 
 **Features:**
-- Scans source code for actual imports/requires
-- Protects essential dependencies (build tools, linters)
-- Shows potential space savings
-- Safe removal with dependency analysis
-
-#### `depmender watch`
-Monitor project files and run dependency checks automatically.
-
-```bash
-depmender watch                   # Start monitoring current directory
-depmender watch --notify          # Enable desktop notifications
-depmender watch --webhook URL     # Send results to webhook
-depmender watch --interval 30s    # Custom scan interval
-depmender watch --auto-fix        # Automatically fix issues
-```
-
-**Features:**
-- Real-time file monitoring (package.json, lockfiles)
-- Automatic scans on changes
-- Desktop notifications for critical issues
-- Webhook integration for CI/CD
-- Optional auto-fixing
+- Upgrades all outdated packages to latest versions
+- Creates automatic backups before changes
+- Shows detailed upgrade plan
+- Risk assessment for each upgrade
+- Safe rollback if issues occur
 
 #### `depmender init`
 Initialize depmender configuration file.
@@ -169,7 +159,7 @@ Shows help information for commands.
 
 ```bash
 depmender help                   # General help
-depmender help scan              # Help for specific command
+depmender help check             # Help for specific command
 ```
 
 #### `depmender examples`
@@ -234,22 +224,25 @@ All commands support these global options:
 ### Daily Development
 ```bash
 # Quick health check
-depmender scan
+depmender check
 
 # Detailed analysis before deployment
 depmender report --verbose
 
 # Fix issues automatically
 depmender fix --yes
+
+# Upgrade to latest versions
+depmender upgrade --yes
 ```
 
 ### CI/CD Integration
 ```bash
 # Generate JSON report for CI
-depmender scan --json > dependency-report.json
+depmender check --json > dependency-report.json
 
 # Fail build on critical issues
-depmender doctor && depmender scan --json | jq '.healthScore < 50' && exit 1
+depmender check --json | jq '.healthScore < 50' && exit 1
 
 # Auto-fix in CI (with caution)
 depmender fix --yes && npm test
@@ -258,13 +251,13 @@ depmender fix --yes && npm test
 ### Project Maintenance
 ```bash
 # System health check
-depmender doctor
+depmender check
 
-# Clean unused dependencies
-depmender clean --confirm
+# Upgrade all dependencies
+depmender upgrade --yes
 
-# Monitor for changes
-depmender watch --notify
+# Verify everything works
+npm test
 ```
 
 ## Package Manager Support
@@ -274,11 +267,11 @@ depmender watch --notify
 - **pnpm** - Full support with pnpm-lock.yaml
 
 ## Features
-- **Comprehensive Scanning** - Detects 6 types of dependency issues
+- **5 Simple Commands** - check, report, fix, upgrade, init - that's all you need
+- **Unified Fix Command** - One command (`depmender fix`) replaces 15+ standalone operations
+- **Comprehensive Checking** - Detects 6 types of dependency issues plus system health
 - **Intelligent Fixing** - Smart suggestions with risk assessment
-- **System Diagnostics** - Complete health check for your environment
-- **Dependency Cleanup** - Remove unused packages safely
-- **Real-time Monitoring** - Watch mode with notifications
+- **Easy Upgrades** - Upgrade all dependencies with one command
 - **Flexible Configuration** - Customize behavior per project
 - **Detailed Reporting** - JSON/HTML output for integration
 - **Security Focus** - Vulnerability detection and fixing

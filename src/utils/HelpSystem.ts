@@ -27,9 +27,11 @@ export class HelpSystem {
           'depmender <command> [options]',
           '',
           'Available commands:',
-          '  scan     Analyze project dependencies and identify issues',
+          '  check    Check project dependencies and system health',
           '  report   Generate detailed dependency health report',
-          '  fix      Automatically fix detected dependency issues'
+          '  fix      Automatically fix all dependency issues',
+          '  upgrade  Upgrade all dependencies to latest versions',
+          '  init     Initialize depmender configuration file'
         ]
       },
       {
@@ -46,12 +48,13 @@ export class HelpSystem {
         title: 'EXAMPLES',
         content: [
           'Basic usage:',
-          '  depmender scan                    # Analyze current directory',
+          '  depmender check                   # Check current directory',
           '  depmender report --verbose        # Generate detailed report',
           '  depmender fix --yes               # Auto-fix without confirmation',
+          '  depmender upgrade --yes           # Upgrade all dependencies',
           '',
           'Advanced usage:',
-          '  depmender scan --path ./my-app    # Analyze specific directory',
+          '  depmender check --path ./my-app   # Check specific directory',
           '  depmender report --json > report.json  # Export JSON report',
           '  depmender fix --path ./backend    # Fix specific project'
         ]
@@ -59,11 +62,12 @@ export class HelpSystem {
       {
         title: 'WORKFLOW',
         content: [
-          '1. Run "depmender scan" to get a quick overview of issues',
+          '1. Run "depmender check" to get a quick overview of issues',
           '2. Run "depmender report" for detailed analysis and recommendations',
           '3. Run "depmender fix" to apply automated fixes',
-          '4. Test your application after applying fixes',
-          '5. Re-run scan to verify all issues are resolved'
+          '4. Run "depmender upgrade" to upgrade all dependencies',
+          '5. Test your application after applying changes',
+          '6. Re-run check to verify all issues are resolved'
         ]
       }
     ];
@@ -305,23 +309,26 @@ export class HelpSystem {
         title: 'DAILY DEVELOPMENT WORKFLOW',
         content: [
           '# Quick health check',
-          'depmender scan',
+          'depmender check',
           '',
           '# Detailed analysis before deployment',
           'depmender report --verbose',
           '',
           '# Fix issues automatically',
-          'depmender fix --yes'
+          'depmender fix --yes',
+          '',
+          '# Upgrade all dependencies',
+          'depmender upgrade --yes'
         ]
       },
       {
         title: 'CI/CD INTEGRATION',
         content: [
           '# Generate JSON report for CI',
-          'depmender scan --json > dependency-report.json',
+          'depmender check --json > dependency-report.json',
           '',
           '# Fail build on critical issues',
-          'depmender scan --json | jq \'.healthScore < 50\' && exit 1',
+          'depmender check --json | jq \'.healthScore < 50\' && exit 1',
           '',
           '# Auto-fix in CI (with caution)',
           'depmender fix --yes && npm test'
@@ -331,8 +338,8 @@ export class HelpSystem {
         title: 'MONOREPO USAGE',
         content: [
           '# Analyze specific packages',
-          'depmender scan --path ./packages/frontend',
-          'depmender scan --path ./packages/backend',
+          'depmender check --path ./packages/frontend',
+          'depmender check --path ./packages/backend',
           '',
           '# Generate reports for all packages',
           'for dir in packages/*/; do',
