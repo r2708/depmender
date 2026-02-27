@@ -76,56 +76,6 @@ export class HelpSystem {
   }
 
   /**
-   * Gets help for the scan command
-   */
-  static getScanHelp(): string {
-    const sections = [
-      {
-        title: 'SCAN COMMAND',
-        content: [
-          'Analyzes project dependencies and provides a quick overview of issues.',
-          'This is typically the first command you run to assess dependency health.'
-        ]
-      },
-      {
-        title: 'USAGE',
-        content: [
-          'depmender scan [options]'
-        ]
-      },
-      {
-        title: 'OPTIONS',
-        content: [
-          '-p, --path <path>    Project path to analyze (default: current directory)',
-          '--json               Output results in JSON format for integration',
-          '--verbose            Show additional analysis details'
-        ]
-      },
-      {
-        title: 'OUTPUT',
-        content: [
-          'The scan command provides:',
-          '• Project information (name, version, package manager)',
-          '• Overall health score (0-100)',
-          '• Issue count breakdown by type',
-          '• Critical issue warnings',
-          '• Next steps recommendations'
-        ]
-      },
-      {
-        title: 'EXAMPLES',
-        content: [
-          'depmender scan                     # Scan current directory',
-          'depmender scan --path ./frontend   # Scan specific directory',
-          'depmender scan --json              # Get machine-readable output'
-        ]
-      }
-    ];
-
-    return CLIFormatter.helpText(sections);
-  }
-
-  /**
    * Gets help for the report command
    */
   static getReportHelp(): string {

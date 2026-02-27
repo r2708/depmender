@@ -91,8 +91,8 @@ export class InitCommand extends BaseCommand {
     lines.push('');
     lines.push('💡 Next steps:');
     lines.push('   1. Edit the configuration file to match your needs');
-    lines.push('   2. Run `depmender scan` to test your configuration');
-    lines.push('   3. Use `depmender doctor` for system diagnostics');
+    lines.push('   2. Run `depmender check` to test your configuration');
+    lines.push('   3. Use `depmender report` for detailed analysis');
     lines.push('');
     lines.push('📚 Learn more: https://github.com/your-repo/depmender#configuration');
 

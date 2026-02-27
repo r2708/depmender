@@ -16,7 +16,7 @@ export class CheckCommand extends BaseCommand {
   private logger = logger.child('CheckCommand');
 
   async execute(args: CommandArgs): Promise<CommandResult> {
-    this.logger.info('Starting scan command execution');
+    this.logger.info('Starting check command execution');
     
     const progress = new ProgressIndicator('Initializing dependency analysis...');
     progress.start();
@@ -55,7 +55,7 @@ export class CheckCommand extends BaseCommand {
       
     } catch (error) {
       progress.fail('Analysis failed');
-      this.logger.error('Scan command failed', error instanceof Error ? error : undefined);
+      this.logger.error('Check command failed', error instanceof Error ? error : undefined);
       return this.handleError(error, 'Dependency analysis');
     }
   }

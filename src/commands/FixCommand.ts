@@ -166,7 +166,7 @@ export class FixCommand extends BaseCommand {
     lines.push('💡 Tips:');
     lines.push('  • Review each issue carefully before making changes');
     lines.push('  • Test your application after making manual fixes');
-    lines.push('  • Run `depguardian scan` again to verify fixes');
+    lines.push('  • Run `depmender check` again to verify fixes');
     
     return lines.join('\n');
   }
@@ -202,7 +202,7 @@ export class FixCommand extends BaseCommand {
     
     lines.push('🎉 Next Steps:');
     lines.push('  • Test your application to ensure everything works');
-    lines.push('  • Run `depguardian scan` to verify all issues are resolved');
+    lines.push('  • Run `depmender check` to verify all issues are resolved');
     lines.push('  • Consider running your test suite');
     
     return lines.join('\n');
