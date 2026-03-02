@@ -63,6 +63,16 @@ export class InitCommand extends BaseCommand {
       '.depmenderrc.js'
     ];
 
+    // Check in depmender-files folder first
+    const depmenderDir = path.join(projectPath, 'depmender-files');
+    for (const fileName of configFiles) {
+      const filePath = path.join(depmenderDir, fileName);
+      if (await fs.pathExists(filePath)) {
+        return `depmender-files/${fileName}`;
+      }
+    }
+
+    // Check in project root (for backward compatibility)
     for (const fileName of configFiles) {
       const filePath = path.join(projectPath, fileName);
       if (await fs.pathExists(filePath)) {
@@ -81,7 +91,7 @@ export class InitCommand extends BaseCommand {
     
     lines.push('✅ Configuration file created successfully!');
     lines.push('');
-    lines.push(`📄 Config file: ${path.basename(configPath)}`);
+    lines.push(`📄 Config file: depmender-files/${path.basename(configPath)}`);
     lines.push('');
     lines.push('🎯 What you can configure:');
     lines.push('   • Scanning rules (outdated packages, vulnerabilities)');

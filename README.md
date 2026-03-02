@@ -146,11 +146,13 @@ depmender init                    # Create sample config file
 depmender init --force           # Overwrite existing config
 ```
 
-**Creates:** `depmender.config.js` with customizable options:
+**Creates:** `depmender-files/depmender.config.js` with customizable options:
 - Scanning rules (max outdated days, allowed vulnerabilities)
 - Auto-fix settings (risk levels, confirmations)
 - Output formatting (colors, verbosity)
 - Integrations (Slack, GitHub)
+
+**Note:** The configuration file is created in a `depmender-files` folder in your project root. You may want to add this folder to your `.gitignore` if you don't want to commit the configuration.
 
 ### Utility Commands
 

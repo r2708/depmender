@@ -97,13 +97,26 @@ export class ConfigManager {
         throw new Error(`Config file not found: ${configPath}`);
       }
     } else {
-      // Search for config files
+      // Search for config files in depmender-files folder first
+      const depmenderDir = path.join(projectPath, 'depmender-files');
       for (const fileName of CONFIG_FILES) {
-        const fullPath = path.join(projectPath, fileName);
+        const fullPath = path.join(depmenderDir, fileName);
         if (await fs.pathExists(fullPath)) {
           config = await ConfigManager.loadConfigFile(fullPath);
           foundConfigPath = fullPath;
           break;
+        }
+      }
+      
+      // If not found in depmender-files, search in project root (for backward compatibility)
+      if (!foundConfigPath) {
+        for (const fileName of CONFIG_FILES) {
+          const fullPath = path.join(projectPath, fileName);
+          if (await fs.pathExists(fullPath)) {
+            config = await ConfigManager.loadConfigFile(fullPath);
+            foundConfigPath = fullPath;
+            break;
+          }
         }
       }
     }
@@ -208,7 +221,11 @@ export class ConfigManager {
    * Create a sample configuration file
    */
   static async createSampleConfig(projectPath: string): Promise<string> {
-    const configPath = path.join(projectPath, 'depmender.config.js');
+    // Create depmender-files directory if it doesn't exist
+    const depmenderDir = path.join(projectPath, 'depmender-files');
+    await fs.ensureDir(depmenderDir);
+    
+    const configPath = path.join(depmenderDir, 'depmender.config.js');
     
     const sampleConfig = `// Depmender Configuration
 module.exports = {
