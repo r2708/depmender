@@ -24,17 +24,5 @@ module.exports = {
     format: 'detailed',            // 'minimal', 'detailed', 'json'
     showSuccessMessages: true,     // Show success messages
     colors: true                   // Enable colored output
-  },
-  
-  // Integration settings (optional)
-  integrations: {
-    slack: {
-      webhook: '',                 // Slack webhook URL
-      notifyOnCritical: true       // Notify on critical issues
-    },
-    github: {
-      createIssues: false,         // Create GitHub issues for problems
-      assignTo: ''                 // GitHub username to assign issues
-    }
   }
 };

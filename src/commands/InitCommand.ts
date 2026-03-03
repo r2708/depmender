@@ -97,7 +97,6 @@ export class InitCommand extends BaseCommand {
     lines.push('   • Scanning rules (outdated packages, vulnerabilities)');
     lines.push('   • Auto-fix settings (risk levels, confirmations)');
     lines.push('   • Output formatting (colors, verbosity)');
-    lines.push('   • Integrations (Slack, GitHub)');
     lines.push('');
     lines.push('💡 Next steps:');
     lines.push('   1. Edit the configuration file to match your needs');

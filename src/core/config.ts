@@ -107,7 +107,7 @@ export class ConfigManager {
           break;
         }
       }
-      
+
       // If not found in depmender-files, search in project root (for backward compatibility)
       if (!foundConfigPath) {
         for (const fileName of CONFIG_FILES) {
@@ -131,7 +131,7 @@ export class ConfigManager {
    */
   private static async loadConfigFile(filePath: string): Promise<DepmenderConfig> {
     const ext = path.extname(filePath);
-    
+
     try {
       if (ext === '.js') {
         // Load JavaScript config
@@ -167,7 +167,7 @@ export class ConfigManager {
    */
   shouldExcludePackage(packageName: string): boolean {
     const excludePatterns = this.config.rules?.excludePackages || [];
-    
+
     return excludePatterns.some(pattern => {
       if (pattern.includes('*')) {
         // Convert glob pattern to regex
@@ -224,9 +224,9 @@ export class ConfigManager {
     // Create depmender-files directory if it doesn't exist
     const depmenderDir = path.join(projectPath, 'depmender-files');
     await fs.ensureDir(depmenderDir);
-    
+
     const configPath = path.join(depmenderDir, 'depmender.config.js');
-    
+
     const sampleConfig = `// Depmender Configuration
 module.exports = {
   // Scanning rules
@@ -253,18 +253,6 @@ module.exports = {
     format: 'detailed',            // 'minimal', 'detailed', 'json'
     showSuccessMessages: true,     // Show success messages
     colors: true                   // Enable colored output
-  },
-  
-  // Integration settings (optional)
-  integrations: {
-    slack: {
-      webhook: '',                 // Slack webhook URL
-      notifyOnCritical: true       // Notify on critical issues
-    },
-    github: {
-      createIssues: false,         // Create GitHub issues for problems
-      assignTo: ''                 // GitHub username to assign issues
-    }
   }
 };
 `;
