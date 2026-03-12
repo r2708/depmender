@@ -35,8 +35,8 @@ export class OutdatedScanner extends BaseDependencyScanner {
     const result = this.createBaseScanResult();
     const allDependencies = this.getAllDeclaredDependencies(context);
     
-    // Check each dependency for updates
-    for (const [packageName, declaredVersion] of Object.entries(allDependencies)) {
+    // Check all dependencies in parallel for much faster scanning
+    const checkPromises = Object.entries(allDependencies).map(async ([packageName, declaredVersion]) => {
       try {
         const issue = await this.checkPackageForUpdates(
           packageName, 
@@ -44,14 +44,19 @@ export class OutdatedScanner extends BaseDependencyScanner {
           context
         );
         
-        if (issue) {
-          result.issues.push(issue);
-        }
+        return issue;
       } catch (error) {
         console.warn(`Failed to check updates for ${packageName}:`, error);
         // Continue with other packages even if one fails
+        return null;
       }
-    }
+    });
+    
+    // Wait for all checks to complete
+    const issues = await Promise.all(checkPromises);
+    
+    // Filter out null results and add to result
+    result.issues.push(...issues.filter((issue): issue is DependencyIssue => issue !== null));
     
     return result;
   }

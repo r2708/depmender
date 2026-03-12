@@ -17,11 +17,11 @@ export class SecurityScanner extends BaseDependencyScanner {
     const result = this.createBaseScanResult();
     const allDependencies = this.getAllDeclaredDependencies(context);
     
-    // Check each dependency for security vulnerabilities
-    for (const [packageName, version] of Object.entries(allDependencies)) {
+    // Check all dependencies in parallel for much faster scanning
+    const scanPromises = Object.entries(allDependencies).map(async ([packageName, version]) => {
       const installedPackage = this.findInstalledPackage(packageName, context);
       if (!installedPackage) {
-        continue; // Skip if package is not installed
+        return []; // Skip if package is not installed
       }
       
       const vulnerabilities = await this.checkPackageVulnerabilities(
@@ -29,7 +29,8 @@ export class SecurityScanner extends BaseDependencyScanner {
         installedPackage.version
       );
       
-      for (const vulnerability of vulnerabilities) {
+      // Process all vulnerabilities for this package in parallel
+      const issuePromises = vulnerabilities.map(async (vulnerability) => {
         const patchAvailable = await this.isPatchAvailable(packageName, vulnerability.id);
         
         const securityIssue: SecurityIssue = {
@@ -41,9 +42,17 @@ export class SecurityScanner extends BaseDependencyScanner {
           patchAvailable
         };
         
-        result.securityIssues!.push(securityIssue);
-      }
-    }
+        return securityIssue;
+      });
+      
+      return Promise.all(issuePromises);
+    });
+    
+    // Wait for all scans to complete
+    const allIssues = await Promise.all(scanPromises);
+    
+    // Flatten the array of arrays and add to result
+    result.securityIssues!.push(...allIssues.flat());
     
     // Prioritize security issues for better reporting
     result.securityIssues = this.prioritizeSecurityIssues(result.securityIssues!);
