@@ -2,6 +2,7 @@ import * as path from 'path';
 import { CLICommand, CommandArgs, CommandResult } from '../core/types';
 import { CLIFormatter } from '../utils/CLIFormatter';
 import { errorHandler } from '../utils/ErrorHandler';
+import { ErrorMessages, ErrorContext } from '../utils/ErrorMessages';
 import { logger } from '../utils/Logger';
 
 /**
@@ -29,7 +30,7 @@ export abstract class BaseCommand implements CLICommand {
     return {
       success: true,
       output,
-      exitCode: 0
+      exitCode: 0,
     };
   }
 
@@ -40,7 +41,7 @@ export abstract class BaseCommand implements CLICommand {
     return {
       success: false,
       output: error,
-      exitCode
+      exitCode,
     };
   }
 
@@ -49,26 +50,26 @@ export abstract class BaseCommand implements CLICommand {
    * Requirement 6.6: Helpful error messages with suggested solutions
    */
   protected handleError(error: unknown, operation: string): CommandResult {
+    const actualError = error instanceof Error ? error : new Error(String(error));
+
+    // Create error context for better messaging
+    const context: ErrorContext = {
+      command: this.name,
+      operation,
+      projectPath: process.cwd(),
+    };
+
+    // Get contextual error message with solutions
+    const contextualMessage = ErrorMessages.getContextualError(actualError, context);
+    console.error(contextualMessage);
+
+    // Also use the original error handler for logging
     const errorInfo = errorHandler.analyzeError(error, `${this.name} command`);
-    const formattedError = errorHandler.formatError(errorInfo);
-    
-    console.error(formattedError);
-    
-    // Add recovery suggestions if the error is recoverable
-    if (errorInfo.recoverable) {
-      console.error('\n🔄 This error might be recoverable. Try the suggestions above.');
-    }
-    
-    // Add general help information
-    console.error('\n📚 For more help:');
-    const helpOptions = [
-      `Run ${CLIFormatter.command('depguardian help')} for general usage`,
-      `Run ${CLIFormatter.command('depguardian troubleshooting')} for common issues`,
-      `Use ${CLIFormatter.command('--verbose')} flag for detailed output`
-    ];
-    console.error(CLIFormatter.bulletList(helpOptions));
-    
-    return this.createErrorResult(formattedError);
+
+    // Log for debugging
+    logger.error(`Command ${this.name} failed during ${operation}`, actualError);
+
+    return this.createErrorResult(contextualMessage);
   }
 
   /**

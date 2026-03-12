@@ -6,7 +6,6 @@ import { PackageManagerType } from '../core/types';
  * Detects the package manager used in a project based on lockfiles and configuration
  */
 export class PackageManagerDetector {
-  
   /**
    * Detects the package manager type for a given project path
    * Priority: pnpm > yarn > npm (based on lockfile presence)
@@ -15,7 +14,7 @@ export class PackageManagerDetector {
     const lockfiles = [
       { file: 'pnpm-lock.yaml', type: PackageManagerType.PNPM },
       { file: 'yarn.lock', type: PackageManagerType.YARN },
-      { file: 'package-lock.json', type: PackageManagerType.NPM }
+      { file: 'package-lock.json', type: PackageManagerType.NPM },
     ];
 
     // Check for lockfiles in order of priority
@@ -31,7 +30,7 @@ export class PackageManagerDetector {
       { file: 'pnpm-workspace.yaml', type: PackageManagerType.PNPM },
       { file: '.yarnrc', type: PackageManagerType.YARN },
       { file: '.yarnrc.yml', type: PackageManagerType.YARN },
-      { file: '.npmrc', type: PackageManagerType.NPM }
+      { file: '.npmrc', type: PackageManagerType.NPM },
     ];
 
     for (const { file, type } of configFiles) {
@@ -46,7 +45,7 @@ export class PackageManagerDetector {
       const packageJsonPath = path.join(projectPath, 'package.json');
       if (await fs.pathExists(packageJsonPath)) {
         const packageJson = await fs.readJson(packageJsonPath);
-        
+
         if (packageJson.packageManager) {
           const packageManager = packageJson.packageManager.toLowerCase();
           if (packageManager.includes('pnpm')) return PackageManagerType.PNPM;
@@ -88,7 +87,7 @@ export class PackageManagerDetector {
    * Validates if the detected package manager is consistent with available lockfiles
    */
   static async validatePackageManager(
-    projectPath: string, 
+    projectPath: string,
     detectedType: PackageManagerType
   ): Promise<{ isValid: boolean; warnings: string[] }> {
     const availableLockfiles = await this.getAvailableLockfiles(projectPath);
@@ -98,7 +97,7 @@ export class PackageManagerDetector {
     if (availableLockfiles.length > 1) {
       warnings.push(
         `Multiple lockfiles detected: ${availableLockfiles.join(', ')}. ` +
-        `This may cause dependency resolution conflicts.`
+          `This may cause dependency resolution conflicts.`
       );
     }
 
@@ -114,7 +113,7 @@ export class PackageManagerDetector {
 
     return {
       isValid: availableLockfiles.length === 0 || hasExpectedLockfile,
-      warnings
+      warnings,
     };
   }
 

@@ -4,7 +4,7 @@
 export enum PackageManagerType {
   NPM = 'npm',
   YARN = 'yarn',
-  PNPM = 'pnpm'
+  PNPM = 'pnpm',
 }
 
 // Issue Types and Severity
@@ -14,21 +14,21 @@ export enum IssueType {
   BROKEN = 'broken',
   PEER_CONFLICT = 'peer-conflict',
   VERSION_MISMATCH = 'version-mismatch',
-  SECURITY = 'security'
+  SECURITY = 'security',
 }
 
 export enum IssueSeverity {
   LOW = 'low',
   MEDIUM = 'medium',
   HIGH = 'high',
-  CRITICAL = 'critical'
+  CRITICAL = 'critical',
 }
 
 export enum SecuritySeverity {
   LOW = 'low',
   MODERATE = 'moderate',
   HIGH = 'high',
-  CRITICAL = 'critical'
+  CRITICAL = 'critical',
 }
 
 // Scanner Types
@@ -38,7 +38,7 @@ export enum ScannerType {
   BROKEN = 'broken',
   PEER_CONFLICTS = 'peer-conflicts',
   VERSION_MISMATCHES = 'version-mismatches',
-  SECURITY = 'security'
+  SECURITY = 'security',
 }
 
 // Fix Types
@@ -46,34 +46,34 @@ export enum FixType {
   INSTALL_MISSING = 'install-missing',
   UPDATE_OUTDATED = 'update-outdated',
   RESOLVE_CONFLICT = 'resolve-conflict',
-  REGENERATE_LOCKFILE = 'regenerate-lockfile'
+  REGENERATE_LOCKFILE = 'regenerate-lockfile',
 }
 
 export enum RiskLevel {
   LOW = 'low',
   MEDIUM = 'medium',
   HIGH = 'high',
-  CRITICAL = 'critical'
+  CRITICAL = 'critical',
 }
 
 // Conflict Types
 export enum ConflictType {
   VERSION_RANGE = 'version-range',
   PEER_DEPENDENCY = 'peer-dependency',
-  TRANSITIVE = 'transitive'
+  TRANSITIVE = 'transitive',
 }
 
 export enum ConflictSeverity {
   WARNING = 'warning',
   ERROR = 'error',
-  CRITICAL = 'critical'
+  CRITICAL = 'critical',
 }
 
 export enum ResolutionStrategy {
   UPDATE_TO_COMPATIBLE = 'update-to-compatible',
   DOWNGRADE_TO_COMPATIBLE = 'downgrade-to-compatible',
   ADD_PEER_DEPENDENCY = 'add-peer-dependency',
-  REMOVE_CONFLICTING = 'remove-conflicting'
+  REMOVE_CONFLICTING = 'remove-conflicting',
 }
 
 // Core Data Structures
@@ -133,11 +133,11 @@ export interface AnalysisResult {
 
 // Health Scoring
 export interface HealthScoreFactors {
-  outdatedPackages: number;      // Weight: 20%
-  securityIssues: number;        // Weight: 40%
-  peerConflicts: number;         // Weight: 15%
-  missingPackages: number;       // Weight: 15%
-  brokenInstallations: number;   // Weight: 10%
+  outdatedPackages: number; // Weight: 20%
+  securityIssues: number; // Weight: 40%
+  peerConflicts: number; // Weight: 15%
+  missingPackages: number; // Weight: 15%
+  brokenInstallations: number; // Weight: 10%
 }
 
 // Reporting Types
@@ -344,7 +344,7 @@ export interface ConflictResolver {
 export enum ErrorSeverity {
   WARNING = 'warning',
   ERROR = 'error',
-  CRITICAL = 'critical'
+  CRITICAL = 'critical',
 }
 
 export interface DepguardianError extends Error {

@@ -1,38 +1,37 @@
 import * as semver from 'semver';
 import { BaseDependencyScanner } from './BaseDependencyScanner';
-import { 
-  ScanContext, 
-  ScanResult, 
-  ScannerType, 
-  DependencyIssue, 
-  IssueType, 
-  IssueSeverity 
+import {
+  ScanContext,
+  ScanResult,
+  ScannerType,
+  DependencyIssue,
+  IssueType,
+  IssueSeverity,
 } from '../core/types';
 
 /**
  * Scanner that finds discrepancies between package.json and installed versions
  */
 export class VersionMismatchScanner extends BaseDependencyScanner {
-
   getScannerType(): ScannerType {
     return ScannerType.VERSION_MISMATCHES;
   }
 
   async scan(context: ScanContext): Promise<ScanResult> {
     this.validateContext(context);
-    
+
     const result = this.createBaseScanResult();
     const allDependencies = this.getAllDeclaredDependencies(context);
-    
+
     // Check each declared dependency for version mismatches
     for (const [packageName, declaredVersion] of Object.entries(allDependencies)) {
       const issue = this.checkVersionMismatch(packageName, declaredVersion, context);
-      
+
       if (issue) {
         result.issues.push(issue);
       }
     }
-    
+
     return result;
   }
 
@@ -40,13 +39,13 @@ export class VersionMismatchScanner extends BaseDependencyScanner {
    * Checks if there's a version mismatch between declared and installed versions
    */
   private checkVersionMismatch(
-    packageName: string, 
-    declaredVersion: string, 
+    packageName: string,
+    declaredVersion: string,
     context: ScanContext
   ): DependencyIssue | null {
     // Get the installed version
     const installedVersion = this.getInstalledVersion(packageName, context);
-    
+
     if (!installedVersion) {
       // Package not installed - this is handled by MissingScanner
       return null;
@@ -72,7 +71,7 @@ export class VersionMismatchScanner extends BaseDependencyScanner {
       latestVersion: undefined, // We don't fetch latest in this scanner
       severity: mismatchInfo.severity,
       description: mismatchInfo.description,
-      fixable: mismatchInfo.fixable
+      fixable: mismatchInfo.fixable,
     };
   }
 
@@ -89,13 +88,13 @@ export class VersionMismatchScanner extends BaseDependencyScanner {
       // Clean versions for semver operations
       const cleanDeclared = this.cleanVersionRange(declaredVersion);
       const cleanInstalled = semver.clean(installedVersion);
-      
+
       if (!cleanInstalled) {
         return {
           hasMismatch: true,
           severity: IssueSeverity.HIGH,
           description: `Invalid installed version format: ${installedVersion}`,
-          fixable: true
+          fixable: true,
         };
       }
 
@@ -106,11 +105,15 @@ export class VersionMismatchScanner extends BaseDependencyScanner {
 
       // Determine the type and severity of mismatch
       const mismatchType = this.determineMismatchType(declaredVersion, installedVersion);
-      const severity = this.determineMismatchSeverity(mismatchType, declaredVersion, installedVersion);
+      const severity = this.determineMismatchSeverity(
+        mismatchType,
+        declaredVersion,
+        installedVersion
+      );
       const description = this.createMismatchDescription(
-        packageName, 
-        declaredVersion, 
-        installedVersion, 
+        packageName,
+        declaredVersion,
+        installedVersion,
         mismatchType
       );
 
@@ -118,15 +121,14 @@ export class VersionMismatchScanner extends BaseDependencyScanner {
         hasMismatch: true,
         severity,
         description,
-        fixable: this.isMismatchFixable(mismatchType)
+        fixable: this.isMismatchFixable(mismatchType),
       };
-
     } catch (error) {
       return {
         hasMismatch: true,
         severity: IssueSeverity.MEDIUM,
         description: `Error analyzing version mismatch for ${packageName}: ${error}`,
-        fixable: true
+        fixable: true,
       };
     }
   }
@@ -155,12 +157,12 @@ export class VersionMismatchScanner extends BaseDependencyScanner {
    * Determines the type of version mismatch
    */
   private determineMismatchType(
-    declaredVersion: string, 
+    declaredVersion: string,
     installedVersion: string
   ): VersionMismatchType {
     try {
       const cleanInstalled = semver.clean(installedVersion);
-      
+
       if (!cleanInstalled) {
         return VersionMismatchType.INVALID_VERSION;
       }
@@ -189,7 +191,6 @@ export class VersionMismatchScanner extends BaseDependencyScanner {
       }
 
       return VersionMismatchType.RANGE_MISMATCH;
-
     } catch (error) {
       return VersionMismatchType.INVALID_VERSION;
     }
@@ -200,10 +201,14 @@ export class VersionMismatchScanner extends BaseDependencyScanner {
    */
   private isExactVersion(versionString: string): boolean {
     // Check if the version string has any range operators
-    if (versionString.match(/^[\^~>=<]/) || versionString.includes('||') || versionString.includes(' - ')) {
+    if (
+      versionString.match(/^[\^~>=<]/) ||
+      versionString.includes('||') ||
+      versionString.includes(' - ')
+    ) {
       return false;
     }
-    
+
     // Check if it's a valid semver version
     return !!semver.clean(versionString.trim());
   }
@@ -217,13 +222,13 @@ export class VersionMismatchScanner extends BaseDependencyScanner {
       if (semver.satisfies(installedVersion, declaredRange)) {
         return false; // Version satisfies the range
       }
-      
+
       // Get the minimum version that would satisfy the range
       const minVersion = semver.minVersion(declaredRange);
       if (!minVersion) {
         return false; // Can't determine range bounds
       }
-      
+
       // If installed version is greater than the minimum required, it might be too high
       return semver.gt(installedVersion, minVersion.version);
     } catch (error) {
@@ -240,13 +245,13 @@ export class VersionMismatchScanner extends BaseDependencyScanner {
       if (semver.satisfies(installedVersion, declaredRange)) {
         return false;
       }
-      
+
       // Get the minimum version that would satisfy the range
       const minVersion = semver.minVersion(declaredRange);
       if (!minVersion) {
         return false; // Can't determine range bounds
       }
-      
+
       // If installed version is less than the minimum required, it's too low
       return semver.lt(installedVersion, minVersion.version);
     } catch (error) {
@@ -265,7 +270,7 @@ export class VersionMismatchScanner extends BaseDependencyScanner {
       return [
         semver.inc(baseVersion, 'patch'),
         semver.inc(baseVersion, 'minor'),
-        semver.inc(baseVersion, 'major')
+        semver.inc(baseVersion, 'major'),
       ].filter(v => v !== null) as string[];
     } catch (error) {
       return [];
@@ -283,21 +288,21 @@ export class VersionMismatchScanner extends BaseDependencyScanner {
     switch (mismatchType) {
       case VersionMismatchType.INVALID_VERSION:
         return IssueSeverity.CRITICAL;
-        
+
       case VersionMismatchType.EXACT_MISMATCH:
         return IssueSeverity.HIGH;
-        
+
       case VersionMismatchType.VERSION_TOO_HIGH:
         // Higher version might have breaking changes
         return this.assessBreakingChangeRisk(declaredVersion, installedVersion);
-        
+
       case VersionMismatchType.VERSION_TOO_LOW:
         // Lower version might be missing features or fixes
         return IssueSeverity.MEDIUM;
-        
+
       case VersionMismatchType.PRERELEASE_MISMATCH:
         return IssueSeverity.MEDIUM;
-        
+
       case VersionMismatchType.RANGE_MISMATCH:
       default:
         return IssueSeverity.MEDIUM;
@@ -307,7 +312,10 @@ export class VersionMismatchScanner extends BaseDependencyScanner {
   /**
    * Assesses the risk of breaking changes between versions
    */
-  private assessBreakingChangeRisk(declaredVersion: string, installedVersion: string): IssueSeverity {
+  private assessBreakingChangeRisk(
+    declaredVersion: string,
+    installedVersion: string
+  ): IssueSeverity {
     try {
       // Extract the base version from the range for comparison
       const baseVersion = this.extractBaseVersionFromRange(declaredVersion);
@@ -315,11 +323,11 @@ export class VersionMismatchScanner extends BaseDependencyScanner {
 
       const cleanBase = semver.clean(baseVersion);
       const cleanInstalled = semver.clean(installedVersion);
-      
+
       if (!cleanBase || !cleanInstalled) return IssueSeverity.MEDIUM;
 
       const diff = semver.diff(cleanBase, cleanInstalled);
-      
+
       switch (diff) {
         case 'major':
           return IssueSeverity.HIGH;
@@ -347,7 +355,7 @@ export class VersionMismatchScanner extends BaseDependencyScanner {
         .split('||')[0]
         .split(' - ')[0]
         .trim();
-      
+
       return semver.clean(cleaned);
     } catch (error) {
       return null;
@@ -364,23 +372,23 @@ export class VersionMismatchScanner extends BaseDependencyScanner {
     mismatchType: VersionMismatchType
   ): string {
     const baseMessage = `Version mismatch for '${packageName}': declared '${declaredVersion}', installed '${installedVersion}'.`;
-    
+
     switch (mismatchType) {
       case VersionMismatchType.INVALID_VERSION:
         return `${baseMessage} The installed version format is invalid.`;
-        
+
       case VersionMismatchType.EXACT_MISMATCH:
         return `${baseMessage} Exact version mismatch detected.`;
-        
+
       case VersionMismatchType.VERSION_TOO_HIGH:
         return `${baseMessage} Installed version is higher than the declared range allows.`;
-        
+
       case VersionMismatchType.VERSION_TOO_LOW:
         return `${baseMessage} Installed version is lower than the declared range expects.`;
-        
+
       case VersionMismatchType.PRERELEASE_MISMATCH:
         return `${baseMessage} Prerelease version installed but stable version expected.`;
-        
+
       case VersionMismatchType.RANGE_MISMATCH:
       default:
         return `${baseMessage} The installed version does not satisfy the declared range.`;
@@ -421,12 +429,12 @@ export class VersionMismatchScanner extends BaseDependencyScanner {
       tooLow: 0,
       prerelease: 0,
       invalid: 0,
-      packages: []
+      packages: [],
     };
 
     for (const [packageName, declaredVersion] of Object.entries(allDependencies)) {
       const installedVersion = this.getInstalledVersion(packageName, context);
-      
+
       if (!installedVersion) {
         continue; // Skip missing packages
       }
@@ -440,14 +448,14 @@ export class VersionMismatchScanner extends BaseDependencyScanner {
 
       if (mismatchInfo.hasMismatch) {
         const mismatchType = this.determineMismatchType(declaredVersion, installedVersion);
-        
+
         stats.total++;
         stats.packages.push({
           name: packageName,
           declared: declaredVersion,
           installed: installedVersion,
           type: mismatchType,
-          severity: mismatchInfo.severity
+          severity: mismatchInfo.severity,
         });
 
         switch (mismatchType) {
@@ -485,7 +493,7 @@ enum VersionMismatchType {
   VERSION_TOO_HIGH = 'version-too-high',
   VERSION_TOO_LOW = 'version-too-low',
   PRERELEASE_MISMATCH = 'prerelease-mismatch',
-  INVALID_VERSION = 'invalid-version'
+  INVALID_VERSION = 'invalid-version',
 }
 
 interface VersionMismatchAnalysis {

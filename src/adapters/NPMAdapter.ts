@@ -12,7 +12,6 @@ const execAsync = promisify(exec);
  * Handles package-lock.json parsing and npm command execution
  */
 export class NPMAdapter extends BasePackageManagerAdapter {
-  
   getType(): PackageManagerType {
     return PackageManagerType.NPM;
   }
@@ -22,14 +21,14 @@ export class NPMAdapter extends BasePackageManagerAdapter {
    */
   async readLockfile(projectPath: string): Promise<Lockfile> {
     const lockfilePath = path.join(projectPath, 'package-lock.json');
-    
+
     if (!(await fs.pathExists(lockfilePath))) {
       throw new Error(`package-lock.json not found at ${lockfilePath}`);
     }
 
     try {
       const lockfileContent = await fs.readJson(lockfilePath);
-      
+
       // Validate package-lock.json structure
       if (!lockfileContent.name || !lockfileContent.version) {
         throw new Error('Invalid package-lock.json: missing name or version');
@@ -38,7 +37,7 @@ export class NPMAdapter extends BasePackageManagerAdapter {
       return {
         type: PackageManagerType.NPM,
         content: lockfileContent,
-        path: lockfilePath
+        path: lockfilePath,
       };
     } catch (error) {
       if (error instanceof SyntaxError) {
@@ -53,12 +52,12 @@ export class NPMAdapter extends BasePackageManagerAdapter {
    */
   async installPackage(packageName: string, version?: string): Promise<void> {
     const packageSpec = version ? `${packageName}@${version}` : packageName;
-    
+
     try {
       const command = `npm install ${packageSpec} --legacy-peer-deps`;
       const { stdout, stderr } = await execAsync(command, {
         cwd: this.projectPath,
-        timeout: 60000 // 60 second timeout
+        timeout: 60000, // 60 second timeout
       });
 
       if (stderr && !stderr.includes('npm WARN')) {
@@ -76,13 +75,13 @@ export class NPMAdapter extends BasePackageManagerAdapter {
    */
   async updatePackage(packageName: string, version: string): Promise<void> {
     const packageSpec = `${packageName}@${version}`;
-    
+
     try {
       // Use npm install instead of npm update for specific versions
       const command = `npm install ${packageSpec} --legacy-peer-deps`;
       const { stdout, stderr } = await execAsync(command, {
         cwd: this.projectPath,
-        timeout: 60000
+        timeout: 60000,
       });
 
       if (stderr && !stderr.includes('npm WARN')) {
@@ -103,7 +102,7 @@ export class NPMAdapter extends BasePackageManagerAdapter {
       const command = `npm uninstall ${packageName} --legacy-peer-deps`;
       const { stdout, stderr } = await execAsync(command, {
         cwd: this.projectPath,
-        timeout: 60000
+        timeout: 60000,
       });
 
       if (stderr && !stderr.includes('npm WARN')) {
@@ -121,7 +120,7 @@ export class NPMAdapter extends BasePackageManagerAdapter {
    */
   async regenerateLockfile(): Promise<void> {
     const lockfilePath = this.getLockfilePath();
-    
+
     try {
       // Remove existing lockfile if it exists
       if (await fs.pathExists(lockfilePath)) {
@@ -137,7 +136,7 @@ export class NPMAdapter extends BasePackageManagerAdapter {
       // Run npm install to regenerate lockfile
       const { stdout, stderr } = await execAsync('npm install', {
         cwd: this.projectPath,
-        timeout: 120000 // 2 minute timeout for full install
+        timeout: 120000, // 2 minute timeout for full install
       });
 
       if (stderr && !stderr.includes('npm WARN')) {
@@ -169,7 +168,7 @@ export class NPMAdapter extends BasePackageManagerAdapter {
       version: lockContent.version,
       lockfileVersion: lockContent.lockfileVersion || 1,
       dependencies: this.parseDependencies(lockContent.dependencies || {}),
-      packages: this.parsePackages(lockContent.packages || {})
+      packages: this.parsePackages(lockContent.packages || {}),
     };
   }
 
@@ -189,7 +188,7 @@ export class NPMAdapter extends BasePackageManagerAdapter {
         dev: depInfo.dev || false,
         optional: depInfo.optional || false,
         requires: depInfo.requires || {},
-        dependencies: depInfo.dependencies ? this.parseDependencies(depInfo.dependencies) : []
+        dependencies: depInfo.dependencies ? this.parseDependencies(depInfo.dependencies) : [],
       });
     }
 
@@ -204,7 +203,7 @@ export class NPMAdapter extends BasePackageManagerAdapter {
 
     for (const [location, info] of Object.entries(packages)) {
       const pkgInfo = info as any;
-      
+
       // Skip root package (empty string key)
       if (location === '') continue;
 
@@ -221,7 +220,7 @@ export class NPMAdapter extends BasePackageManagerAdapter {
         dependencies: pkgInfo.dependencies || {},
         devDependencies: pkgInfo.devDependencies || {},
         peerDependencies: pkgInfo.peerDependencies || {},
-        optionalDependencies: pkgInfo.optionalDependencies || {}
+        optionalDependencies: pkgInfo.optionalDependencies || {},
       });
     }
 
@@ -233,12 +232,12 @@ export class NPMAdapter extends BasePackageManagerAdapter {
    */
   private extractPackageNameFromLocation(location: string): string {
     const parts = location.split('/');
-    
+
     // Handle scoped packages (@scope/package)
     if (parts[parts.length - 2]?.startsWith('@')) {
       return `${parts[parts.length - 2]}/${parts[parts.length - 1]}`;
     }
-    
+
     return parts[parts.length - 1];
   }
 
@@ -272,17 +271,17 @@ export class NPMAdapter extends BasePackageManagerAdapter {
   async getNPMConfig(): Promise<NPMConfig> {
     try {
       const { stdout } = await execAsync('npm config list --json', {
-        cwd: this.projectPath
+        cwd: this.projectPath,
       });
-      
+
       const config = JSON.parse(stdout);
-      
+
       return {
         registry: config.registry || 'https://registry.npmjs.org/',
         cache: config.cache,
         prefix: config.prefix,
         userconfig: config.userconfig,
-        globalconfig: config.globalconfig
+        globalconfig: config.globalconfig,
       };
     } catch (error: any) {
       throw new Error(`Failed to get npm config: ${error.message}`);

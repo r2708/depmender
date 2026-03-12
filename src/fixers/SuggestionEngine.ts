@@ -10,7 +10,7 @@ import {
   SecurityIssue,
   SecuritySeverity,
   PackageManagerType,
-  RiskAssessment
+  RiskAssessment,
 } from '../core/types';
 import * as semver from 'semver';
 
@@ -18,11 +18,10 @@ import * as semver from 'semver';
  * Suggestion engine that generates smart recommendations for dependency fixes
  */
 export class SuggestionEngine {
-  
   // Performance optimization caches
   private versionCache = new Map<string, semver.SemVer | null>();
   private riskCache = new Map<string, RiskAssessment>();
-  
+
   /**
    * Cached version parsing to avoid redundant semver.parse() calls
    */
@@ -40,10 +39,17 @@ export class SuggestionEngine {
   /**
    * Cached risk assessment to avoid redundant calculations
    */
-  private getRiskAssessmentCached(currentVersion: string, targetVersion: string, packageName: string): RiskAssessment {
+  private getRiskAssessmentCached(
+    currentVersion: string,
+    targetVersion: string,
+    packageName: string
+  ): RiskAssessment {
     const cacheKey = `${packageName}:${currentVersion}:${targetVersion}`;
     if (!this.riskCache.has(cacheKey)) {
-      this.riskCache.set(cacheKey, this.getDetailedRiskAssessment(currentVersion, targetVersion, packageName));
+      this.riskCache.set(
+        cacheKey,
+        this.getDetailedRiskAssessment(currentVersion, targetVersion, packageName)
+      );
     }
     return this.riskCache.get(cacheKey)!;
   }
@@ -91,7 +97,7 @@ export class SuggestionEngine {
     for (const suggestion of suggestions) {
       // Create a normalized key for deduplication
       const key = `${suggestion.type}:${suggestion.description.toLowerCase().replace(/\s+/g, ' ').trim()}`;
-      
+
       if (!seen.has(key)) {
         seen.add(key);
         unique.push(suggestion);
@@ -105,7 +111,7 @@ export class SuggestionEngine {
    * Generates suggestions specific to each issue type
    */
   private async generateIssueSpecificSuggestions(
-    issue: DependencyIssue, 
+    issue: DependencyIssue,
     analysis: AnalysisResult
   ): Promise<FixSuggestion[]> {
     switch (issue.type) {
@@ -133,16 +139,18 @@ export class SuggestionEngine {
   ): Promise<FixSuggestion[]> {
     const suggestions: FixSuggestion[] = [];
     const peerConflicts = analysis.issues.filter(issue => issue.type === IssueType.PEER_CONFLICT);
-    
+
     if (peerConflicts.length === 0) {
       return suggestions;
     }
 
     // Group peer conflicts by package to provide holistic solutions
     const conflictsByPackage = this.groupConflictsByPackage(peerConflicts);
-    
+
     for (const [packageName, conflicts] of conflictsByPackage.entries()) {
-      suggestions.push(...await this.generatePackageSpecificPeerFixes(packageName, conflicts, analysis));
+      suggestions.push(
+        ...(await this.generatePackageSpecificPeerFixes(packageName, conflicts, analysis))
+      );
     }
 
     // Generate ecosystem-wide peer dependency strategies
@@ -156,13 +164,13 @@ export class SuggestionEngine {
    */
   private groupConflictsByPackage(conflicts: DependencyIssue[]): Map<string, DependencyIssue[]> {
     const grouped = new Map<string, DependencyIssue[]>();
-    
+
     for (const conflict of conflicts) {
       const existing = grouped.get(conflict.packageName) || [];
       existing.push(conflict);
       grouped.set(conflict.packageName, existing);
     }
-    
+
     return grouped;
   }
 
@@ -175,32 +183,36 @@ export class SuggestionEngine {
     analysis: AnalysisResult
   ): Promise<FixSuggestion[]> {
     const suggestions: FixSuggestion[] = [];
-    
+
     // Analyze all version requirements for this package
     const versionRequirements = conflicts
       .map(c => c.expectedVersion)
       .filter((v): v is string => v !== undefined);
-    
+
     if (versionRequirements.length > 0) {
       // Find a version that satisfies all requirements
       const unifiedVersion = this.findUnifiedVersion(versionRequirements);
-      
+
       if (unifiedVersion) {
         suggestions.push({
           type: FixType.RESOLVE_CONFLICT,
           description: `Install unified peer dependency ${packageName}@${unifiedVersion} to resolve all conflicts`,
           risk: RiskLevel.MEDIUM,
-          actions: [{
-            type: 'install',
-            packageName,
-            version: unifiedVersion,
-            command: this.getInstallCommand(packageName, unifiedVersion, analysis.packageManager)
-          }],
-          estimatedImpact: `Resolves ${conflicts.length} peer dependency conflict${conflicts.length > 1 ? 's' : ''} with single version`
+          actions: [
+            {
+              type: 'install',
+              packageName,
+              version: unifiedVersion,
+              command: this.getInstallCommand(packageName, unifiedVersion, analysis.packageManager),
+            },
+          ],
+          estimatedImpact: `Resolves ${conflicts.length} peer dependency conflict${conflicts.length > 1 ? 's' : ''} with single version`,
         });
       } else {
         // Suggest alternative strategies when no unified version exists
-        suggestions.push(...this.generateAlternativePeerStrategies(packageName, conflicts, analysis));
+        suggestions.push(
+          ...this.generateAlternativePeerStrategies(packageName, conflicts, analysis)
+        );
       }
     }
 
@@ -214,7 +226,7 @@ export class SuggestionEngine {
     try {
       // Start with the first requirement as base
       let satisfyingVersions = this.getVersionsFromRange(requirements[0]);
-      
+
       // Filter versions that satisfy all requirements
       for (let i = 1; i < requirements.length; i++) {
         const currentRequirement = requirements[i];
@@ -226,17 +238,16 @@ export class SuggestionEngine {
           }
         });
       }
-      
+
       // Return the highest satisfying version
       if (satisfyingVersions.length > 0) {
         return satisfyingVersions.sort(semver.rcompare)[0];
       }
-      
     } catch (error) {
       // Fallback: try to find a compromise version
       return this.findCompromiseVersion(requirements);
     }
-    
+
     return null;
   }
 
@@ -245,19 +256,19 @@ export class SuggestionEngine {
    */
   private getVersionsFromRange(range: string): string[] {
     const versions: string[] = [];
-    
+
     try {
       // For exact versions, return as-is
       if (semver.valid(range)) {
         versions.push(range);
         return versions;
       }
-      
+
       // For ranges, generate potential versions
       const minVersion = semver.minVersion(range);
       if (minVersion) {
         versions.push(minVersion.version);
-        
+
         // Add some incremental versions
         for (let i = 0; i < 5; i++) {
           const patch = semver.inc(minVersion.version, 'patch');
@@ -266,11 +277,10 @@ export class SuggestionEngine {
           if (minor && semver.satisfies(minor, range)) versions.push(minor);
         }
       }
-      
     } catch (error) {
       // Return empty array on error
     }
-    
+
     return [...new Set(versions)]; // Remove duplicates
   }
 
@@ -284,15 +294,14 @@ export class SuggestionEngine {
         .map(req => semver.minVersion(req))
         .filter((v): v is semver.SemVer => v !== null)
         .sort(semver.rcompare);
-      
+
       if (minVersions.length > 0) {
         return minVersions[0].version;
       }
-      
     } catch (error) {
       // Return null on error
     }
-    
+
     return null;
   }
 
@@ -305,7 +314,7 @@ export class SuggestionEngine {
     analysis: AnalysisResult
   ): FixSuggestion[] {
     const suggestions: FixSuggestion[] = [];
-    
+
     // Suggest using the most recent version requirement
     const mostRecentVersion = this.findMostRecentVersion(conflicts);
     if (mostRecentVersion) {
@@ -313,13 +322,20 @@ export class SuggestionEngine {
         type: FixType.RESOLVE_CONFLICT,
         description: `Install latest required version ${packageName}@${mostRecentVersion} (may require dependency updates)`,
         risk: RiskLevel.HIGH,
-        actions: [{
-          type: 'install',
-          packageName,
-          version: mostRecentVersion,
-          command: this.getInstallCommand(packageName, mostRecentVersion, analysis.packageManager)
-        }],
-        estimatedImpact: 'High risk - may require updating other dependencies to maintain compatibility'
+        actions: [
+          {
+            type: 'install',
+            packageName,
+            version: mostRecentVersion,
+            command: this.getInstallCommand(
+              packageName,
+              mostRecentVersion,
+              analysis.packageManager
+            ),
+          },
+        ],
+        estimatedImpact:
+          'High risk - may require updating other dependencies to maintain compatibility',
       });
     }
 
@@ -329,7 +345,7 @@ export class SuggestionEngine {
       description: `Consider using workspace/monorepo peer dependency hoisting for ${packageName}`,
       risk: RiskLevel.MEDIUM,
       actions: [],
-      estimatedImpact: 'Architectural change - requires workspace configuration'
+      estimatedImpact: 'Architectural change - requires workspace configuration',
     });
 
     // Suggest dependency injection pattern
@@ -338,7 +354,7 @@ export class SuggestionEngine {
       description: `Consider dependency injection pattern to avoid peer dependency conflicts with ${packageName}`,
       risk: RiskLevel.LOW,
       actions: [],
-      estimatedImpact: 'Code refactoring required - improves long-term maintainability'
+      estimatedImpact: 'Code refactoring required - improves long-term maintainability',
     });
 
     return suggestions;
@@ -353,7 +369,7 @@ export class SuggestionEngine {
       .filter((v): v is string => v !== undefined)
       .filter(v => semver.valid(v))
       .sort(semver.rcompare);
-    
+
     return versions.length > 0 ? versions[0] : null;
   }
 
@@ -365,27 +381,28 @@ export class SuggestionEngine {
     analysis: AnalysisResult
   ): FixSuggestion[] {
     const suggestions: FixSuggestion[] = [];
-    
+
     if (conflicts.length > 3) {
       suggestions.push({
         type: FixType.RESOLVE_CONFLICT,
         description: `Consider peer dependency audit - ${conflicts.length} conflicts detected`,
         risk: RiskLevel.MEDIUM,
         actions: [],
-        estimatedImpact: 'Comprehensive review recommended - multiple peer dependency issues detected'
+        estimatedImpact:
+          'Comprehensive review recommended - multiple peer dependency issues detected',
       });
     }
 
     // Suggest package manager specific solutions
     const packageNames = conflicts.map(c => c.packageName).join(', ');
-    
+
     if (analysis.packageManager === PackageManagerType.NPM) {
       suggestions.push({
         type: FixType.RESOLVE_CONFLICT,
         description: `Consider using npm overrides to resolve peer dependency conflicts for ${packageNames}`,
         risk: RiskLevel.HIGH,
         actions: [],
-        estimatedImpact: 'Forces dependency resolution - may cause runtime issues'
+        estimatedImpact: 'Forces dependency resolution - may cause runtime issues',
       });
     } else if (analysis.packageManager === PackageManagerType.YARN) {
       suggestions.push({
@@ -393,7 +410,7 @@ export class SuggestionEngine {
         description: `Consider using Yarn resolutions to resolve peer dependency conflicts for ${packageNames}`,
         risk: RiskLevel.HIGH,
         actions: [],
-        estimatedImpact: 'Forces dependency resolution - may cause runtime issues'
+        estimatedImpact: 'Forces dependency resolution - may cause runtime issues',
       });
     }
 
@@ -408,10 +425,10 @@ export class SuggestionEngine {
     analysis: AnalysisResult
   ): Promise<FixSuggestion[]> {
     const suggestions: FixSuggestion[] = [];
-    
+
     // Analyze version patterns across all issues
-    const versionIssues = analysis.issues.filter(issue => 
-      issue.type === IssueType.VERSION_MISMATCH || issue.type === IssueType.OUTDATED
+    const versionIssues = analysis.issues.filter(
+      issue => issue.type === IssueType.VERSION_MISMATCH || issue.type === IssueType.OUTDATED
     );
 
     if (versionIssues.length === 0) {
@@ -420,7 +437,7 @@ export class SuggestionEngine {
 
     // Generate strategic recommendations based on issue patterns
     const strategyAnalysis = this.analyzeVersionStrategy(versionIssues);
-    
+
     suggestions.push(...this.generateStrategicRecommendations(strategyAnalysis, analysis));
     suggestions.push(...this.generateMaintenanceStrategies(versionIssues, analysis));
 
@@ -446,8 +463,8 @@ export class SuggestionEngine {
         [RiskLevel.LOW]: 0,
         [RiskLevel.MEDIUM]: 0,
         [RiskLevel.HIGH]: 0,
-        [RiskLevel.CRITICAL]: 0
-      }
+        [RiskLevel.CRITICAL]: 0,
+      },
     };
 
     for (const issue of issues) {
@@ -456,7 +473,7 @@ export class SuggestionEngine {
       try {
         const current = this.parseVersionCached(issue.currentVersion);
         const expected = this.parseVersionCached(issue.expectedVersion);
-        
+
         if (!current || !expected) continue;
 
         const risk = this.estimateBreakingChangeRisk(
@@ -469,7 +486,7 @@ export class SuggestionEngine {
         if (semver.gt(expected.version, current.version)) {
           const majorDiff = semver.major(expected.version) - semver.major(current.version);
           const minorDiff = semver.minor(expected.version) - semver.minor(current.version);
-          
+
           if (majorDiff > 0) {
             analysis.majorUpdatesNeeded++;
           } else if (minorDiff > 0) {
@@ -510,7 +527,7 @@ export class SuggestionEngine {
         description: `Phased update strategy recommended - ${analysis.majorUpdatesNeeded} major updates needed`,
         risk: RiskLevel.MEDIUM,
         actions: [],
-        estimatedImpact: 'Reduces risk by updating dependencies in phases rather than all at once'
+        estimatedImpact: 'Reduces risk by updating dependencies in phases rather than all at once',
       });
     }
 
@@ -521,18 +538,21 @@ export class SuggestionEngine {
         description: `Batch minor updates - ${analysis.minorUpdatesNeeded} minor updates available`,
         risk: RiskLevel.LOW,
         actions: [],
-        estimatedImpact: 'Low risk batch update - can be done together for efficiency'
+        estimatedImpact: 'Low risk batch update - can be done together for efficiency',
       });
     }
 
     // Warn about high-risk update concentration
-    if (analysis.riskDistribution[RiskLevel.HIGH] + analysis.riskDistribution[RiskLevel.CRITICAL] > 2) {
+    if (
+      analysis.riskDistribution[RiskLevel.HIGH] + analysis.riskDistribution[RiskLevel.CRITICAL] >
+      2
+    ) {
       suggestions.push({
         type: FixType.UPDATE_OUTDATED,
         description: 'High-risk updates detected - consider staging environment testing',
         risk: RiskLevel.HIGH,
         actions: [],
-        estimatedImpact: 'Multiple high-risk updates require careful testing and rollback planning'
+        estimatedImpact: 'Multiple high-risk updates require careful testing and rollback planning',
       });
     }
 
@@ -543,7 +563,8 @@ export class SuggestionEngine {
         description: `Investigate ${analysis.downgrades} package downgrade${analysis.downgrades > 1 ? 's' : ''} - may indicate dependency conflicts`,
         risk: RiskLevel.MEDIUM,
         actions: [],
-        estimatedImpact: 'Downgrades may indicate ecosystem compatibility issues requiring investigation'
+        estimatedImpact:
+          'Downgrades may indicate ecosystem compatibility issues requiring investigation',
       });
     }
 
@@ -566,7 +587,7 @@ export class SuggestionEngine {
         description: 'Consider automated dependency management tools (Dependabot, Renovate)',
         risk: RiskLevel.LOW,
         actions: [],
-        estimatedImpact: 'Automates routine updates and reduces manual maintenance overhead'
+        estimatedImpact: 'Automates routine updates and reduces manual maintenance overhead',
       });
     }
 
@@ -578,7 +599,7 @@ export class SuggestionEngine {
         description: 'Consider version pinning strategy for critical dependencies',
         risk: RiskLevel.LOW,
         actions: [],
-        estimatedImpact: 'Improves stability by controlling when updates are applied'
+        estimatedImpact: 'Improves stability by controlling when updates are applied',
       });
     }
 
@@ -588,7 +609,7 @@ export class SuggestionEngine {
       description: 'Establish regular dependency audit schedule',
       risk: RiskLevel.LOW,
       actions: [],
-      estimatedImpact: 'Proactive maintenance reduces security risks and technical debt'
+      estimatedImpact: 'Proactive maintenance reduces security risks and technical debt',
     });
 
     return suggestions;
@@ -603,16 +624,13 @@ export class SuggestionEngine {
     analysis: AnalysisResult
   ): Promise<FixSuggestion[]> {
     const suggestions: FixSuggestion[] = [];
-    
+
     if (!issue.currentVersion || !issue.latestVersion) {
       return suggestions;
     }
 
     // Determine safe update paths based on semantic versioning
-    const updatePaths = this.calculateSafeUpdatePaths(
-      issue.currentVersion,
-      issue.latestVersion
-    );
+    const updatePaths = this.calculateSafeUpdatePaths(issue.currentVersion, issue.latestVersion);
 
     for (const path of updatePaths) {
       const risk = this.estimateBreakingChangeRisk(
@@ -625,13 +643,19 @@ export class SuggestionEngine {
         type: FixType.UPDATE_OUTDATED,
         description: `Update ${issue.packageName} from ${issue.currentVersion} to ${path.targetVersion} (${path.strategy})`,
         risk,
-        actions: [{
-          type: 'update',
-          packageName: issue.packageName,
-          version: path.targetVersion,
-          command: this.getUpdateCommand(issue.packageName, path.targetVersion, analysis.packageManager)
-        }],
-        estimatedImpact: path.impact
+        actions: [
+          {
+            type: 'update',
+            packageName: issue.packageName,
+            version: path.targetVersion,
+            command: this.getUpdateCommand(
+              issue.packageName,
+              path.targetVersion,
+              analysis.packageManager
+            ),
+          },
+        ],
+        estimatedImpact: path.impact,
       });
     }
 
@@ -641,44 +665,55 @@ export class SuggestionEngine {
   /**
    * Calculates safe update paths for a package
    */
-  private calculateSafeUpdatePaths(currentVersion: string, latestVersion: string): Array<{
+  private calculateSafeUpdatePaths(
+    currentVersion: string,
+    latestVersion: string
+  ): Array<{
     targetVersion: string;
     strategy: string;
     impact: string;
   }> {
     const paths: Array<{ targetVersion: string; strategy: string; impact: string }> = [];
-    
+
     try {
       const current = this.parseVersionCached(currentVersion);
       const latest = this.parseVersionCached(latestVersion);
-      
+
       if (!current || !latest) {
         // Fallback for non-semver versions
         paths.push({
           targetVersion: latestVersion,
           strategy: 'direct update',
-          impact: 'Unknown impact - manual review recommended'
+          impact: 'Unknown impact - manual review recommended',
         });
         return paths;
       }
 
       // Patch update (safest) - but validate version exists
       const nextPatch = semver.inc(currentVersion, 'patch');
-      if (nextPatch && semver.lte(nextPatch, latestVersion) && this.isReasonableVersion(nextPatch, currentVersion)) {
+      if (
+        nextPatch &&
+        semver.lte(nextPatch, latestVersion) &&
+        this.isReasonableVersion(nextPatch, currentVersion)
+      ) {
         paths.push({
           targetVersion: nextPatch,
           strategy: 'patch update',
-          impact: 'Low risk - bug fixes only'
+          impact: 'Low risk - bug fixes only',
         });
       }
 
       // Minor update (moderate risk) - but validate version exists
       const nextMinor = semver.inc(currentVersion, 'minor');
-      if (nextMinor && semver.lte(nextMinor, latestVersion) && this.isReasonableVersion(nextMinor, currentVersion)) {
+      if (
+        nextMinor &&
+        semver.lte(nextMinor, latestVersion) &&
+        this.isReasonableVersion(nextMinor, currentVersion)
+      ) {
         paths.push({
           targetVersion: nextMinor,
           strategy: 'minor update',
-          impact: 'Moderate risk - new features, backward compatible'
+          impact: 'Moderate risk - new features, backward compatible',
         });
       }
 
@@ -687,7 +722,7 @@ export class SuggestionEngine {
         paths.push({
           targetVersion: latestVersion,
           strategy: 'major update',
-          impact: 'High risk - breaking changes possible'
+          impact: 'High risk - breaking changes possible',
         });
       }
 
@@ -696,16 +731,15 @@ export class SuggestionEngine {
         paths.push({
           targetVersion: latestVersion,
           strategy: 'direct update',
-          impact: 'Review required - version gap analysis needed'
+          impact: 'Review required - version gap analysis needed',
         });
       }
-
     } catch (error) {
       // Fallback for invalid semver - only suggest latest
       paths.push({
         targetVersion: latestVersion,
         strategy: 'direct update',
-        impact: 'Manual review required - invalid semantic versioning'
+        impact: 'Manual review required - invalid semantic versioning',
       });
     }
 
@@ -724,7 +758,7 @@ export class SuggestionEngine {
     try {
       const current = this.parseVersionCached(currentVersion);
       const target = this.parseVersionCached(targetVersion);
-      
+
       if (!current || !target) {
         return RiskLevel.HIGH; // Unknown versions are risky
       }
@@ -759,12 +793,12 @@ export class SuggestionEngine {
         if (semver.major(current.version) === 0) {
           return RiskLevel.HIGH;
         }
-        
+
         // Large minor version jumps may indicate significant changes
         if (minorDiff > 5) {
           return RiskLevel.MEDIUM;
         }
-        
+
         // Regular minor updates should be backward compatible
         return RiskLevel.LOW;
       }
@@ -780,7 +814,6 @@ export class SuggestionEngine {
 
       // Same version or downgrade within same minor
       return RiskLevel.LOW;
-
     } catch (error) {
       return RiskLevel.HIGH; // Invalid semver is risky
     }
@@ -801,7 +834,7 @@ export class SuggestionEngine {
     try {
       const current = this.parseVersionCached(currentVersion);
       const target = this.parseVersionCached(targetVersion);
-      
+
       if (!current || !target) {
         factors.push('Invalid semantic versioning detected');
         mitigations.push('Review package documentation for version compatibility');
@@ -850,7 +883,6 @@ export class SuggestionEngine {
         mitigations.push('Run full test suite after update');
         mitigations.push('Create backup before applying changes');
       }
-
     } catch (error) {
       factors.push('Error analyzing version compatibility');
       mitigations.push('Manual review required');
@@ -866,18 +898,26 @@ export class SuggestionEngine {
     issue: DependencyIssue,
     analysis: AnalysisResult
   ): Promise<FixSuggestion[]> {
-    return [{
-      type: FixType.INSTALL_MISSING,
-      description: `Install missing package ${issue.packageName}`,
-      risk: RiskLevel.LOW,
-      actions: [{
-        type: 'install',
-        packageName: issue.packageName,
-        version: issue.expectedVersion,
-        command: this.getInstallCommand(issue.packageName, issue.expectedVersion, analysis.packageManager)
-      }],
-      estimatedImpact: 'Low risk - installing declared dependency'
-    }];
+    return [
+      {
+        type: FixType.INSTALL_MISSING,
+        description: `Install missing package ${issue.packageName}`,
+        risk: RiskLevel.LOW,
+        actions: [
+          {
+            type: 'install',
+            packageName: issue.packageName,
+            version: issue.expectedVersion,
+            command: this.getInstallCommand(
+              issue.packageName,
+              issue.expectedVersion,
+              analysis.packageManager
+            ),
+          },
+        ],
+        estimatedImpact: 'Low risk - installing declared dependency',
+      },
+    ];
   }
 
   /**
@@ -896,13 +936,19 @@ export class SuggestionEngine {
         type: FixType.INSTALL_MISSING,
         description: `Install missing peer dependency ${issue.packageName}`,
         risk: RiskLevel.MEDIUM,
-        actions: [{
-          type: 'install',
-          packageName: issue.packageName,
-          version: issue.expectedVersion,
-          command: this.getInstallCommand(issue.packageName, issue.expectedVersion, analysis.packageManager)
-        }],
-        estimatedImpact: 'Medium risk - peer dependency installation may affect other packages'
+        actions: [
+          {
+            type: 'install',
+            packageName: issue.packageName,
+            version: issue.expectedVersion,
+            command: this.getInstallCommand(
+              issue.packageName,
+              issue.expectedVersion,
+              analysis.packageManager
+            ),
+          },
+        ],
+        estimatedImpact: 'Medium risk - peer dependency installation may affect other packages',
       });
     }
 
@@ -925,13 +971,15 @@ export class SuggestionEngine {
           type: FixType.RESOLVE_CONFLICT,
           description: `Update ${issue.packageName} to compatible version ${version}`,
           risk: riskAssessment.level,
-          actions: [{
-            type: 'update',
-            packageName: issue.packageName,
-            version: version,
-            command: this.getUpdateCommand(issue.packageName, version, analysis.packageManager)
-          }],
-          estimatedImpact: this.generateImpactDescription(riskAssessment, version)
+          actions: [
+            {
+              type: 'update',
+              packageName: issue.packageName,
+              version: version,
+              command: this.getUpdateCommand(issue.packageName, version, analysis.packageManager),
+            },
+          ],
+          estimatedImpact: this.generateImpactDescription(riskAssessment, version),
         });
       }
 
@@ -963,13 +1011,19 @@ export class SuggestionEngine {
       type: FixType.RESOLVE_CONFLICT,
       description: `Use package manager resolution override for ${issue.packageName}`,
       risk: RiskLevel.HIGH,
-      actions: [{
-        type: 'update',
-        packageName: issue.packageName,
-        version: issue.expectedVersion,
-        command: this.getResolutionOverrideCommand(issue.packageName, issue.expectedVersion || 'latest', analysis.packageManager)
-      }],
-      estimatedImpact: 'High risk - forces version resolution, may cause runtime issues'
+      actions: [
+        {
+          type: 'update',
+          packageName: issue.packageName,
+          version: issue.expectedVersion,
+          command: this.getResolutionOverrideCommand(
+            issue.packageName,
+            issue.expectedVersion || 'latest',
+            analysis.packageManager
+          ),
+        },
+      ],
+      estimatedImpact: 'High risk - forces version resolution, may cause runtime issues',
     });
 
     // Suggest finding alternative packages
@@ -978,7 +1032,7 @@ export class SuggestionEngine {
       description: `Consider alternative packages that don't conflict with ${issue.packageName}`,
       risk: RiskLevel.MEDIUM,
       actions: [],
-      estimatedImpact: 'Requires manual research - may need to replace conflicting dependencies'
+      estimatedImpact: 'Requires manual research - may need to replace conflicting dependencies',
     });
 
     return suggestions;
@@ -1006,7 +1060,8 @@ export class SuggestionEngine {
           description: `Widen peer dependency range to ${widenedRange} for ${issue.packageName}`,
           risk: RiskLevel.MEDIUM,
           actions: [],
-          estimatedImpact: 'Requires updating package.json peerDependencies - coordinate with package maintainer'
+          estimatedImpact:
+            'Requires updating package.json peerDependencies - coordinate with package maintainer',
         });
       }
 
@@ -1015,15 +1070,20 @@ export class SuggestionEngine {
         type: FixType.RESOLVE_CONFLICT,
         description: `Use exact version ${issue.expectedVersion} for ${issue.packageName}`,
         risk: RiskLevel.LOW,
-        actions: [{
-          type: 'update',
-          packageName: issue.packageName,
-          version: issue.expectedVersion,
-          command: this.getUpdateCommand(issue.packageName, issue.expectedVersion, analysis.packageManager)
-        }],
-        estimatedImpact: 'Low risk - uses exact version matching to avoid range conflicts'
+        actions: [
+          {
+            type: 'update',
+            packageName: issue.packageName,
+            version: issue.expectedVersion,
+            command: this.getUpdateCommand(
+              issue.packageName,
+              issue.expectedVersion,
+              analysis.packageManager
+            ),
+          },
+        ],
+        estimatedImpact: 'Low risk - uses exact version matching to avoid range conflicts',
       });
-
     } catch (error) {
       // Fallback suggestion
       suggestions.push({
@@ -1031,7 +1091,7 @@ export class SuggestionEngine {
         description: `Manual resolution required for ${issue.packageName} peer dependency conflict`,
         risk: RiskLevel.HIGH,
         actions: [],
-        estimatedImpact: 'Requires manual analysis of dependency requirements'
+        estimatedImpact: 'Requires manual analysis of dependency requirements',
       });
     }
 
@@ -1045,14 +1105,18 @@ export class SuggestionEngine {
     try {
       const current = semver.minVersion(currentVersion);
       const expected = semver.minVersion(expectedVersion);
-      
+
       if (!current || !expected) {
         return null;
       }
 
       // Find the lower and higher versions
-      const lower = semver.lt(current.version, expected.version) ? current.version : expected.version;
-      const higher = semver.gt(current.version, expected.version) ? current.version : expected.version;
+      const lower = semver.lt(current.version, expected.version)
+        ? current.version
+        : expected.version;
+      const higher = semver.gt(current.version, expected.version)
+        ? current.version
+        : expected.version;
 
       // Create a range that includes both versions
       const lowerMajor = semver.major(lower);
@@ -1065,7 +1129,6 @@ export class SuggestionEngine {
         // Different major versions - use range
         return `>=${lower} <${higherMajor + 1}.0.0`;
       }
-
     } catch (error) {
       return null;
     }
@@ -1074,7 +1137,11 @@ export class SuggestionEngine {
   /**
    * Gets resolution override command for different package managers
    */
-  private getResolutionOverrideCommand(packageName: string, version: string, packageManager: PackageManagerType): string {
+  private getResolutionOverrideCommand(
+    packageName: string,
+    version: string,
+    packageManager: PackageManagerType
+  ): string {
     switch (packageManager) {
       case PackageManagerType.NPM:
         return `Add to package.json: "overrides": { "${packageName}": "${version}" }`;
@@ -1092,14 +1159,14 @@ export class SuggestionEngine {
    */
   private generateImpactDescription(riskAssessment: RiskAssessment, version: string): string {
     const baseDescription = `Updates to version ${version}`;
-    
+
     if (riskAssessment.factors.length === 0) {
       return `${baseDescription} - minimal impact expected`;
     }
 
     const riskFactors = riskAssessment.factors.slice(0, 2).join(', ');
     const mitigation = riskAssessment.mitigations[0] || 'thorough testing recommended';
-    
+
     return `${baseDescription} - ${riskFactors}. ${mitigation}`;
   }
 
@@ -1109,33 +1176,38 @@ export class SuggestionEngine {
    */
   private findCompatibleVersions(currentVersion: string, expectedVersion: string): string[] {
     const compatibleVersions: string[] = [];
-    
+
     try {
       // Parse version ranges and find intersection
       const currentRange = semver.validRange(currentVersion);
       const expectedRange = semver.validRange(expectedVersion);
-      
+
       if (currentRange && expectedRange) {
         // Generate potential compatible versions
         const potentialVersions = this.generatePotentialVersions(currentVersion, expectedVersion);
-        
+
         // Filter versions that satisfy both ranges
         for (const version of potentialVersions) {
           if (semver.satisfies(version, currentRange) && semver.satisfies(version, expectedRange)) {
             compatibleVersions.push(version);
           }
         }
-        
+
         // If no intersection found, try to find the closest compatible versions
         if (compatibleVersions.length === 0) {
-          const closestVersions = this.findClosestCompatibleVersions(currentVersion, expectedVersion);
+          const closestVersions = this.findClosestCompatibleVersions(
+            currentVersion,
+            expectedVersion
+          );
           compatibleVersions.push(...closestVersions);
         }
       } else {
         // Handle cases where one or both are exact versions
         if (semver.valid(currentVersion) && semver.valid(expectedVersion)) {
           // Choose the higher version as it's more likely to be compatible
-          const higher = semver.gt(currentVersion, expectedVersion) ? currentVersion : expectedVersion;
+          const higher = semver.gt(currentVersion, expectedVersion)
+            ? currentVersion
+            : expectedVersion;
           compatibleVersions.push(higher);
         } else if (semver.valid(expectedVersion)) {
           compatibleVersions.push(expectedVersion);
@@ -1143,7 +1215,7 @@ export class SuggestionEngine {
           compatibleVersions.push(currentVersion);
         }
       }
-      
+
       // Remove duplicates and sort by preference (higher versions first)
       const uniqueVersions = [...new Set(compatibleVersions)];
       return uniqueVersions.sort((a, b) => {
@@ -1153,12 +1225,12 @@ export class SuggestionEngine {
           return 0;
         }
       });
-      
     } catch (error) {
       // Fallback for invalid semver
       const fallbackVersions = [];
       if (expectedVersion) fallbackVersions.push(expectedVersion);
-      if (currentVersion && currentVersion !== expectedVersion) fallbackVersions.push(currentVersion);
+      if (currentVersion && currentVersion !== expectedVersion)
+        fallbackVersions.push(currentVersion);
       return fallbackVersions;
     }
   }
@@ -1168,43 +1240,42 @@ export class SuggestionEngine {
    */
   private generatePotentialVersions(currentVersion: string, expectedVersion: string): string[] {
     const versions: string[] = [];
-    
+
     try {
       // Add the exact versions if they're valid
       if (semver.valid(currentVersion)) versions.push(currentVersion);
       if (semver.valid(expectedVersion)) versions.push(expectedVersion);
-      
+
       // Generate versions based on ranges
       const currentParsed = semver.minVersion(currentVersion);
       const expectedParsed = semver.minVersion(expectedVersion);
-      
+
       if (currentParsed && expectedParsed) {
         // Add minimum versions from ranges
         versions.push(currentParsed.version);
         versions.push(expectedParsed.version);
-        
+
         // Generate intermediate versions
-        const baseVersion = semver.gt(currentParsed.version, expectedParsed.version) 
-          ? expectedParsed.version 
+        const baseVersion = semver.gt(currentParsed.version, expectedParsed.version)
+          ? expectedParsed.version
           : currentParsed.version;
-        
+
         // Add patch increments
         for (let i = 0; i < 5; i++) {
           const patchVersion = semver.inc(baseVersion, 'patch');
           if (patchVersion) versions.push(patchVersion);
         }
-        
+
         // Add minor increments
         for (let i = 0; i < 3; i++) {
           const minorVersion = semver.inc(baseVersion, 'minor');
           if (minorVersion) versions.push(minorVersion);
         }
       }
-      
     } catch (error) {
       // Return basic versions on error
     }
-    
+
     return [...new Set(versions)]; // Remove duplicates
   }
 
@@ -1213,31 +1284,30 @@ export class SuggestionEngine {
    */
   private findClosestCompatibleVersions(currentVersion: string, expectedVersion: string): string[] {
     const versions: string[] = [];
-    
+
     try {
       const currentMin = semver.minVersion(currentVersion);
       const expectedMin = semver.minVersion(expectedVersion);
-      
+
       if (currentMin && expectedMin) {
         // Suggest upgrading to the higher minimum version
-        const higherVersion = semver.gt(currentMin.version, expectedMin.version) 
-          ? currentMin.version 
+        const higherVersion = semver.gt(currentMin.version, expectedMin.version)
+          ? currentMin.version
           : expectedMin.version;
         versions.push(higherVersion);
-        
+
         // Also suggest the next major version as a potential resolution
         const nextMajor = semver.inc(higherVersion, 'major');
         if (nextMajor) {
           versions.push(nextMajor);
         }
       }
-      
     } catch (error) {
       // Fallback to suggesting both versions
       if (semver.valid(currentVersion)) versions.push(currentVersion);
       if (semver.valid(expectedVersion)) versions.push(expectedVersion);
     }
-    
+
     return versions;
   }
 
@@ -1258,41 +1328,56 @@ export class SuggestionEngine {
     // Determine if we should upgrade or downgrade
     const shouldUpgrade = this.shouldUpgradeVersion(issue.currentVersion, issue.expectedVersion);
     const riskAssessment = this.getRiskAssessmentCached(
-      issue.currentVersion, 
-      issue.expectedVersion, 
+      issue.currentVersion,
+      issue.expectedVersion,
       issue.packageName
     );
-    
+
     if (shouldUpgrade) {
       suggestions.push({
         type: FixType.UPDATE_OUTDATED,
         description: `Upgrade ${issue.packageName} from ${issue.currentVersion} to ${issue.expectedVersion}`,
         risk: riskAssessment.level,
-        actions: [{
-          type: 'update',
-          packageName: issue.packageName,
-          version: issue.expectedVersion,
-          command: this.getUpdateCommand(issue.packageName, issue.expectedVersion, analysis.packageManager)
-        }],
-        estimatedImpact: this.generateUpgradeImpactDescription(riskAssessment)
+        actions: [
+          {
+            type: 'update',
+            packageName: issue.packageName,
+            version: issue.expectedVersion,
+            command: this.getUpdateCommand(
+              issue.packageName,
+              issue.expectedVersion,
+              analysis.packageManager
+            ),
+          },
+        ],
+        estimatedImpact: this.generateUpgradeImpactDescription(riskAssessment),
       });
 
       // Suggest intermediate upgrade steps for high-risk updates
       if (riskAssessment.level === RiskLevel.HIGH || riskAssessment.level === RiskLevel.CRITICAL) {
-        const intermediateVersions = this.findIntermediateVersions(issue.currentVersion, issue.expectedVersion);
+        const intermediateVersions = this.findIntermediateVersions(
+          issue.currentVersion,
+          issue.expectedVersion
+        );
         for (const version of intermediateVersions) {
-          const intermediateRisk = this.getRiskAssessmentCached(issue.currentVersion, version, issue.packageName);
+          const intermediateRisk = this.getRiskAssessmentCached(
+            issue.currentVersion,
+            version,
+            issue.packageName
+          );
           suggestions.push({
             type: FixType.UPDATE_OUTDATED,
             description: `Intermediate upgrade: ${issue.packageName} to ${version} (step-by-step approach)`,
             risk: intermediateRisk.level,
-            actions: [{
-              type: 'update',
-              packageName: issue.packageName,
-              version: version,
-              command: this.getUpdateCommand(issue.packageName, version, analysis.packageManager)
-            }],
-            estimatedImpact: `Intermediate step to reduce upgrade risk - ${this.generateUpgradeImpactDescription(intermediateRisk)}`
+            actions: [
+              {
+                type: 'update',
+                packageName: issue.packageName,
+                version: version,
+                command: this.getUpdateCommand(issue.packageName, version, analysis.packageManager),
+              },
+            ],
+            estimatedImpact: `Intermediate step to reduce upgrade risk - ${this.generateUpgradeImpactDescription(intermediateRisk)}`,
           });
         }
       }
@@ -1301,13 +1386,22 @@ export class SuggestionEngine {
         type: FixType.RESOLVE_CONFLICT,
         description: `Downgrade ${issue.packageName} from ${issue.currentVersion} to ${issue.expectedVersion}`,
         risk: RiskLevel.MEDIUM,
-        actions: [{
-          type: 'update',
-          packageName: issue.packageName,
-          version: issue.expectedVersion,
-          command: this.getUpdateCommand(issue.packageName, issue.expectedVersion, analysis.packageManager)
-        }],
-        estimatedImpact: this.generateDowngradeImpactDescription(issue.currentVersion, issue.expectedVersion)
+        actions: [
+          {
+            type: 'update',
+            packageName: issue.packageName,
+            version: issue.expectedVersion,
+            command: this.getUpdateCommand(
+              issue.packageName,
+              issue.expectedVersion,
+              analysis.packageManager
+            ),
+          },
+        ],
+        estimatedImpact: this.generateDowngradeImpactDescription(
+          issue.currentVersion,
+          issue.expectedVersion
+        ),
       });
     }
 
@@ -1317,7 +1411,7 @@ export class SuggestionEngine {
       description: `Update package.json to match installed version ${issue.currentVersion}`,
       risk: RiskLevel.LOW,
       actions: [],
-      estimatedImpact: 'Low risk - aligns package.json with currently working version'
+      estimatedImpact: 'Low risk - aligns package.json with currently working version',
     });
 
     return suggestions;
@@ -1328,17 +1422,17 @@ export class SuggestionEngine {
    */
   private findIntermediateVersions(currentVersion: string, targetVersion: string): string[] {
     const intermediateVersions: string[] = [];
-    
+
     try {
       const current = this.parseVersionCached(currentVersion);
       const target = this.parseVersionCached(targetVersion);
-      
+
       if (!current || !target) {
         return intermediateVersions;
       }
 
       const majorDiff = semver.major(target.version) - semver.major(current.version);
-      
+
       // For major version jumps, suggest intermediate major versions
       if (majorDiff > 1) {
         for (let i = 1; i < majorDiff; i++) {
@@ -1346,7 +1440,7 @@ export class SuggestionEngine {
           intermediateVersions.push(`${intermediateMajor}.0.0`);
         }
       }
-      
+
       // For large minor version jumps within same major, suggest intermediate minors
       if (majorDiff === 0) {
         const minorDiff = semver.minor(target.version) - semver.minor(current.version);
@@ -1355,11 +1449,10 @@ export class SuggestionEngine {
           intermediateVersions.push(`${semver.major(current.version)}.${midMinor}.0`);
         }
       }
-      
     } catch (error) {
       // Return empty array on error
     }
-    
+
     return intermediateVersions.slice(0, 2); // Limit to 2 intermediate steps
   }
 
@@ -1371,27 +1464,31 @@ export class SuggestionEngine {
       [RiskLevel.LOW]: 'Low risk upgrade - backward compatible changes expected',
       [RiskLevel.MEDIUM]: 'Medium risk upgrade - new features added, test thoroughly',
       [RiskLevel.HIGH]: 'High risk upgrade - potential breaking changes, review documentation',
-      [RiskLevel.CRITICAL]: 'Critical risk upgrade - major changes expected, extensive testing required'
+      [RiskLevel.CRITICAL]:
+        'Critical risk upgrade - major changes expected, extensive testing required',
     };
 
     let description = riskDescriptions[riskAssessment.level];
-    
+
     if (riskAssessment.factors.length > 0) {
       const primaryFactor = riskAssessment.factors[0];
       description += `. ${primaryFactor}`;
     }
-    
+
     return description;
   }
 
   /**
    * Generates downgrade impact description
    */
-  private generateDowngradeImpactDescription(currentVersion: string, targetVersion: string): string {
+  private generateDowngradeImpactDescription(
+    currentVersion: string,
+    targetVersion: string
+  ): string {
     try {
       const majorDiff = semver.major(currentVersion) - semver.major(targetVersion);
       const minorDiff = semver.minor(currentVersion) - semver.minor(targetVersion);
-      
+
       if (majorDiff > 0) {
         return `Major version downgrade - features may be removed, compatibility issues possible`;
       } else if (minorDiff > 0) {
@@ -1423,25 +1520,32 @@ export class SuggestionEngine {
     issue: DependencyIssue,
     analysis: AnalysisResult
   ): Promise<FixSuggestion[]> {
-    return [{
-      type: FixType.REGENERATE_LOCKFILE,
-      description: `Fix corrupted ${issue.packageName} by removing and reinstalling`,
-      risk: RiskLevel.MEDIUM,
-      actions: [
-        {
-          type: 'remove',
-          packageName: issue.packageName,
-          command: this.getRemoveCommand(issue.packageName, analysis.packageManager)
-        },
-        {
-          type: 'install',
-          packageName: issue.packageName,
-          version: issue.expectedVersion,
-          command: this.getInstallCommand(issue.packageName, issue.expectedVersion, analysis.packageManager)
-        }
-      ],
-      estimatedImpact: 'Removes corrupted package files and reinstalls clean version - fixes broken installation'
-    }];
+    return [
+      {
+        type: FixType.REGENERATE_LOCKFILE,
+        description: `Fix corrupted ${issue.packageName} by removing and reinstalling`,
+        risk: RiskLevel.MEDIUM,
+        actions: [
+          {
+            type: 'remove',
+            packageName: issue.packageName,
+            command: this.getRemoveCommand(issue.packageName, analysis.packageManager),
+          },
+          {
+            type: 'install',
+            packageName: issue.packageName,
+            version: issue.expectedVersion,
+            command: this.getInstallCommand(
+              issue.packageName,
+              issue.expectedVersion,
+              analysis.packageManager
+            ),
+          },
+        ],
+        estimatedImpact:
+          'Removes corrupted package files and reinstalls clean version - fixes broken installation',
+      },
+    ];
   }
 
   /**
@@ -1478,24 +1582,31 @@ export class SuggestionEngine {
         type: FixType.UPDATE_OUTDATED,
         description: `Update ${vulnerability.packageName} to ${vulnerability.fixedIn} to fix security vulnerability`,
         risk: riskLevel,
-        actions: [{
-          type: 'update',
-          packageName: vulnerability.packageName,
-          version: vulnerability.fixedIn,
-          command: this.getUpdateCommand(vulnerability.packageName, vulnerability.fixedIn, analysis.packageManager)
-        }],
-        estimatedImpact: `Fixes security vulnerability: ${vulnerability.vulnerability.title}`
+        actions: [
+          {
+            type: 'update',
+            packageName: vulnerability.packageName,
+            version: vulnerability.fixedIn,
+            command: this.getUpdateCommand(
+              vulnerability.packageName,
+              vulnerability.fixedIn,
+              analysis.packageManager
+            ),
+          },
+        ],
+        estimatedImpact: `Fixes security vulnerability: ${vulnerability.vulnerability.title}`,
       });
     } else {
       // Generate guidance suggestion when no fix is available
-      const riskLevel = vulnerability.severity === SecuritySeverity.CRITICAL ? RiskLevel.CRITICAL : RiskLevel.HIGH;
-      
+      const riskLevel =
+        vulnerability.severity === SecuritySeverity.CRITICAL ? RiskLevel.CRITICAL : RiskLevel.HIGH;
+
       suggestions.push({
         type: FixType.RESOLVE_CONFLICT,
         description: `Security vulnerability in ${vulnerability.packageName} - no patch available`,
         risk: riskLevel,
         actions: [],
-        estimatedImpact: `Security vulnerability: ${vulnerability.vulnerability.title}. Consider finding alternative packages or implementing workarounds.`
+        estimatedImpact: `Security vulnerability: ${vulnerability.vulnerability.title}. Consider finding alternative packages or implementing workarounds.`,
       });
     }
 
@@ -1511,14 +1622,14 @@ export class SuggestionEngine {
       // First priority: Security fixes (highest priority)
       const aIsSecurity = this.isSecurityFix(a);
       const bIsSecurity = this.isSecurityFix(b);
-      
+
       if (aIsSecurity && !bIsSecurity) return -1;
       if (!aIsSecurity && bIsSecurity) return 1;
 
       // Second priority: Critical issues that block functionality
       const aIsBlocking = this.isBlockingIssue(a);
       const bIsBlocking = this.isBlockingIssue(b);
-      
+
       if (aIsBlocking && !bIsBlocking) return -1;
       if (!aIsBlocking && bIsBlocking) return 1;
 
@@ -1527,7 +1638,7 @@ export class SuggestionEngine {
         [RiskLevel.LOW]: 0,
         [RiskLevel.MEDIUM]: 1,
         [RiskLevel.HIGH]: 2,
-        [RiskLevel.CRITICAL]: 3
+        [RiskLevel.CRITICAL]: 3,
       };
 
       // For security fixes, prioritize by severity (critical security first)
@@ -1547,7 +1658,7 @@ export class SuggestionEngine {
       // Fifth priority: Impact assessment
       const aImpactScore = this.calculateImpactScore(a);
       const bImpactScore = this.calculateImpactScore(b);
-      
+
       return aImpactScore - bImpactScore;
     });
   }
@@ -1557,9 +1668,10 @@ export class SuggestionEngine {
    */
   private isSecurityFix(suggestion: FixSuggestion): boolean {
     const securityKeywords = ['security', 'vulnerability', 'CVE', 'exploit', 'malicious'];
-    return securityKeywords.some(keyword => 
-      suggestion.description.toLowerCase().includes(keyword.toLowerCase()) ||
-      suggestion.estimatedImpact.toLowerCase().includes(keyword.toLowerCase())
+    return securityKeywords.some(
+      keyword =>
+        suggestion.description.toLowerCase().includes(keyword.toLowerCase()) ||
+        suggestion.estimatedImpact.toLowerCase().includes(keyword.toLowerCase())
     );
   }
 
@@ -1568,9 +1680,11 @@ export class SuggestionEngine {
    */
   private isBlockingIssue(suggestion: FixSuggestion): boolean {
     const blockingKeywords = ['missing', 'broken', 'corrupted', 'failed', 'error'];
-    return blockingKeywords.some(keyword => 
-      suggestion.description.toLowerCase().includes(keyword.toLowerCase())
-    ) || suggestion.type === FixType.INSTALL_MISSING;
+    return (
+      blockingKeywords.some(keyword =>
+        suggestion.description.toLowerCase().includes(keyword.toLowerCase())
+      ) || suggestion.type === FixType.INSTALL_MISSING
+    );
   }
 
   /**
@@ -1578,10 +1692,10 @@ export class SuggestionEngine {
    */
   private getFixTypePriority(): Record<FixType, number> {
     return {
-      [FixType.INSTALL_MISSING]: 0,      // Highest priority - fixes broken functionality
-      [FixType.RESOLVE_CONFLICT]: 1,     // High priority - resolves conflicts
-      [FixType.UPDATE_OUTDATED]: 2,      // Medium priority - improvements
-      [FixType.REGENERATE_LOCKFILE]: 3   // Lower priority - maintenance
+      [FixType.INSTALL_MISSING]: 0, // Highest priority - fixes broken functionality
+      [FixType.RESOLVE_CONFLICT]: 1, // High priority - resolves conflicts
+      [FixType.UPDATE_OUTDATED]: 2, // Medium priority - improvements
+      [FixType.REGENERATE_LOCKFILE]: 3, // Lower priority - maintenance
     };
   }
 
@@ -1616,9 +1730,13 @@ export class SuggestionEngine {
   /**
    * Gets the appropriate install command for the package manager
    */
-  private getInstallCommand(packageName: string, version: string | undefined, packageManager: PackageManagerType): string {
+  private getInstallCommand(
+    packageName: string,
+    version: string | undefined,
+    packageManager: PackageManagerType
+  ): string {
     const versionSpec = version ? `@${version}` : '';
-    
+
     switch (packageManager) {
       case PackageManagerType.NPM:
         return `npm install ${packageName}${versionSpec}`;
@@ -1634,7 +1752,11 @@ export class SuggestionEngine {
   /**
    * Gets the appropriate update command for the package manager
    */
-  private getUpdateCommand(packageName: string, version: string, packageManager: PackageManagerType): string {
+  private getUpdateCommand(
+    packageName: string,
+    version: string,
+    packageManager: PackageManagerType
+  ): string {
     switch (packageManager) {
       case PackageManagerType.NPM:
         return `npm install ${packageName}@${version}`;
@@ -1670,7 +1792,7 @@ export class SuggestionEngine {
     try {
       const current = this.parseVersionCached(currentVersion);
       const target = this.parseVersionCached(targetVersion);
-      
+
       if (!current || !target) {
         return false;
       }
@@ -1680,16 +1802,20 @@ export class SuggestionEngine {
       const currentMajor = current.major;
       const currentMinor = current.minor;
       const currentPatch = current.patch;
-      
+
       const targetMajor = target.major;
       const targetMinor = target.minor;
       const targetPatch = target.patch;
 
       // Skip if it's just a simple +1 increment (likely fake)
-      if (targetMajor === currentMajor && targetMinor === currentMinor && targetPatch === currentPatch + 1) {
+      if (
+        targetMajor === currentMajor &&
+        targetMinor === currentMinor &&
+        targetPatch === currentPatch + 1
+      ) {
         return false;
       }
-      
+
       if (targetMajor === currentMajor && targetMinor === currentMinor + 1 && targetPatch === 0) {
         return false;
       }

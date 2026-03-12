@@ -12,7 +12,7 @@ import {
   RiskLevel,
   DependencyIssue,
   IssueType,
-  IssueSeverity
+  IssueSeverity,
 } from '../core/types';
 import * as semver from 'semver';
 
@@ -21,31 +21,30 @@ import * as semver from 'semver';
  * and provides intelligent resolution strategies with compatibility preservation
  */
 export class ConflictResolver implements IConflictResolver {
-  
   /**
    * Detects multi-level dependency conflicts from analysis results
    */
   async detectConflicts(analysis: AnalysisResult): Promise<Conflict[]> {
     const conflicts: Conflict[] = [];
-    
+
     // Group issues by package name to identify conflicts
     const packageIssues = this.groupIssuesByPackage(analysis.issues);
-    
+
     // Detect version range conflicts
     const versionConflicts = this.detectVersionRangeConflicts(packageIssues);
     conflicts.push(...versionConflicts);
-    
+
     // Detect peer dependency conflicts
     const peerConflicts = this.detectPeerDependencyConflicts(packageIssues);
     conflicts.push(...peerConflicts);
-    
+
     // Detect transitive dependency conflicts
     const transitiveConflicts = await this.detectTransitiveConflicts(analysis);
     conflicts.push(...transitiveConflicts);
-    
+
     // Sort conflicts by severity (critical first)
     conflicts.sort((a, b) => this.compareConflictSeverity(a.severity, b.severity));
-    
+
     return conflicts;
   }
 
@@ -55,21 +54,21 @@ export class ConflictResolver implements IConflictResolver {
   async resolveConflict(conflict: Conflict): Promise<Resolution> {
     // Determine the best resolution strategy
     const strategy = this.determineResolutionStrategy(conflict);
-    
+
     // Generate package changes based on strategy
     const changes = await this.generatePackageChanges(conflict, strategy);
-    
+
     // Create risk assessment
     const riskAssessment = this.assessResolutionRisk(conflict, changes);
-    
+
     // Generate explanation
     const explanation = this.generateResolutionExplanation(conflict, strategy, changes);
-    
+
     return {
       strategy,
       changes,
       explanation,
-      riskAssessment
+      riskAssessment,
     };
   }
 
@@ -83,31 +82,28 @@ export class ConflictResolver implements IConflictResolver {
         if (!semver.valid(change.toVersion)) {
           return false;
         }
-        
+
         // Ensure version changes make sense
-        if (change.changeType === 'update' && 
-            semver.lt(change.toVersion, change.fromVersion)) {
+        if (change.changeType === 'update' && semver.lt(change.toVersion, change.fromVersion)) {
           return false;
         }
-        
-        if (change.changeType === 'downgrade' && 
-            semver.gt(change.toVersion, change.fromVersion)) {
+
+        if (change.changeType === 'downgrade' && semver.gt(change.toVersion, change.fromVersion)) {
           return false;
         }
       }
-      
+
       // Check for circular dependencies in changes
       if (this.hasCircularDependencies(resolution.changes)) {
         return false;
       }
-      
+
       // Validate risk level is appropriate
-      if (resolution.riskAssessment.level === RiskLevel.CRITICAL && 
-          resolution.changes.length > 0) {
+      if (resolution.riskAssessment.level === RiskLevel.CRITICAL && resolution.changes.length > 0) {
         // Critical risk resolutions should have strong justification
         return resolution.riskAssessment.mitigations.length > 0;
       }
-      
+
       return true;
     } catch (error) {
       console.warn('Resolution validation failed:', error);
@@ -127,34 +123,31 @@ export class ConflictResolver implements IConflictResolver {
     const applied: Resolution[] = [];
     const failed: Resolution[] = [];
     const compatibilityIssues: string[] = [];
-    
+
     // Sort resolutions by priority (breaking change minimization)
     const prioritizedResolutions = this.prioritizeResolutions(resolutions);
-    
+
     // Track package versions to detect conflicts
     const packageVersions = new Map<string, string>();
-    
+
     for (const resolution of prioritizedResolutions) {
       try {
         // Check compatibility with already applied changes
-        const compatibilityCheck = this.checkResolutionCompatibility(
-          resolution, 
-          packageVersions
-        );
-        
+        const compatibilityCheck = this.checkResolutionCompatibility(resolution, packageVersions);
+
         if (!compatibilityCheck.compatible) {
           compatibilityIssues.push(...compatibilityCheck.issues);
           failed.push(resolution);
           continue;
         }
-        
+
         // Validate resolution before applying
         const isValid = await this.validateResolution(resolution);
         if (!isValid) {
           failed.push(resolution);
           continue;
         }
-        
+
         // Apply the resolution (update package version tracking)
         for (const change of resolution.changes) {
           if (change.changeType !== 'remove') {
@@ -163,14 +156,14 @@ export class ConflictResolver implements IConflictResolver {
             packageVersions.delete(change.packageName);
           }
         }
-        
+
         applied.push(resolution);
       } catch (error) {
         console.warn(`Failed to apply resolution: ${error}`);
         failed.push(resolution);
       }
     }
-    
+
     return { applied, failed, compatibilityIssues };
   }
 
@@ -183,18 +176,18 @@ export class ConflictResolver implements IConflictResolver {
       // Priority 1: Risk level (lower risk first)
       const riskComparison = this.compareRiskLevels(a.riskAssessment.level, b.riskAssessment.level);
       if (riskComparison !== 0) return riskComparison;
-      
+
       // Priority 2: Number of breaking changes (fewer first)
       const aBreakingChanges = this.countBreakingChanges(a.changes);
       const bBreakingChanges = this.countBreakingChanges(b.changes);
       if (aBreakingChanges !== bBreakingChanges) {
         return aBreakingChanges - bBreakingChanges;
       }
-      
+
       // Priority 3: Strategy preference (safer strategies first)
       const strategyComparison = this.compareStrategies(a.strategy, b.strategy);
       if (strategyComparison !== 0) return strategyComparison;
-      
+
       // Priority 4: Number of changes (fewer first)
       return a.changes.length - b.changes.length;
     });
@@ -204,14 +197,14 @@ export class ConflictResolver implements IConflictResolver {
    * Checks if a resolution is compatible with already applied changes
    */
   private checkResolutionCompatibility(
-    resolution: Resolution, 
+    resolution: Resolution,
     existingVersions: Map<string, string>
   ): { compatible: boolean; issues: string[] } {
     const issues: string[] = [];
-    
+
     for (const change of resolution.changes) {
       const existingVersion = existingVersions.get(change.packageName);
-      
+
       if (existingVersion && existingVersion !== change.fromVersion) {
         // Check if the change is compatible with existing version
         if (change.changeType === 'update' || change.changeType === 'downgrade') {
@@ -220,21 +213,19 @@ export class ConflictResolver implements IConflictResolver {
             if (!this.areVersionsCompatible(existingVersion, change.toVersion)) {
               issues.push(
                 `Package ${change.packageName}: existing version ${existingVersion} ` +
-                `conflicts with proposed version ${change.toVersion}`
+                  `conflicts with proposed version ${change.toVersion}`
               );
             }
           } catch (error) {
-            issues.push(
-              `Package ${change.packageName}: version compatibility check failed`
-            );
+            issues.push(`Package ${change.packageName}: version compatibility check failed`);
           }
         }
       }
     }
-    
+
     return {
       compatible: issues.length === 0,
-      issues
+      issues,
     };
   }
 
@@ -250,20 +241,20 @@ export class ConflictResolver implements IConflictResolver {
     const unresolvable: Conflict[] = [];
     const explanations = new Map<Conflict, string>();
     const manualResolutionOptions = new Map<Conflict, string[]>();
-    
+
     for (const conflict of conflicts) {
       try {
         const resolution = await this.resolveConflict(conflict);
         const isValid = await this.validateResolution(resolution);
-        
+
         // Check if resolution is actually viable
         if (!isValid || resolution.riskAssessment.level === RiskLevel.CRITICAL) {
           unresolvable.push(conflict);
-          
+
           // Generate detailed explanation
           const explanation = this.generateUnresolvableExplanation(conflict, resolution);
           explanations.set(conflict, explanation);
-          
+
           // Generate manual resolution options
           const manualOptions = this.generateManualResolutionOptions(conflict);
           manualResolutionOptions.set(conflict, manualOptions);
@@ -275,43 +266,47 @@ export class ConflictResolver implements IConflictResolver {
         manualResolutionOptions.set(conflict, [
           'Review dependency requirements manually',
           'Consider alternative packages',
-          'Contact package maintainers for compatibility updates'
+          'Contact package maintainers for compatibility updates',
         ]);
       }
     }
-    
+
     return { unresolvable, explanations, manualResolutionOptions };
   }
 
   /**
    * Generates explanation for why a conflict cannot be automatically resolved
    */
-  private generateUnresolvableExplanation(conflict: Conflict, attemptedResolution: Resolution): string {
+  private generateUnresolvableExplanation(
+    conflict: Conflict,
+    attemptedResolution: Resolution
+  ): string {
     let explanation = `Cannot automatically resolve ${conflict.type} conflict for packages: `;
     explanation += conflict.packages.map(p => `${p.name}@${p.version}`).join(', ');
     explanation += '\n\nReasons:\n';
-    
+
     // Analyze why the resolution failed
     if (attemptedResolution.riskAssessment.level === RiskLevel.CRITICAL) {
       explanation += '- Resolution would introduce critical breaking changes\n';
-      explanation += '- Risk factors: ' + attemptedResolution.riskAssessment.factors.join(', ') + '\n';
+      explanation +=
+        '- Risk factors: ' + attemptedResolution.riskAssessment.factors.join(', ') + '\n';
     }
-    
+
     if (attemptedResolution.changes.length === 0) {
       explanation += '- No viable version changes could be identified\n';
     }
-    
+
     // Check for version incompatibilities
     const hasIncompatibleVersions = this.hasIncompatibleVersionRequirements(conflict);
     if (hasIncompatibleVersions) {
       explanation += '- Package version requirements are fundamentally incompatible\n';
     }
-    
+
     // Check for circular dependencies
     if (this.hasCircularDependencies(attemptedResolution.changes)) {
       explanation += '- Resolution would create circular dependencies\n';
     }
-    
+
     return explanation;
   }
 
@@ -320,32 +315,32 @@ export class ConflictResolver implements IConflictResolver {
    */
   private generateManualResolutionOptions(conflict: Conflict): string[] {
     const options: string[] = [];
-    
+
     switch (conflict.type) {
       case ConflictType.PEER_DEPENDENCY:
         options.push('Install the required peer dependency manually');
         options.push('Update packages to versions with compatible peer requirements');
         options.push('Use npm overrides or yarn resolutions to force a specific version');
         break;
-        
+
       case ConflictType.VERSION_RANGE:
         options.push('Update all conflicting packages to their latest compatible versions');
         options.push('Downgrade packages to a common compatible version');
         options.push('Consider using a different package that provides similar functionality');
         break;
-        
+
       case ConflictType.TRANSITIVE:
         options.push('Update direct dependencies to resolve transitive conflicts');
         options.push('Use package manager overrides to force specific transitive versions');
         options.push('Consider switching to a different package manager (npm/yarn/pnpm)');
         break;
     }
-    
+
     // Add general options
     options.push('Review package documentation for compatibility information');
     options.push('Check package issue trackers for known compatibility problems');
     options.push('Consider contributing to package compatibility improvements');
-    
+
     return options;
   }
 
@@ -359,7 +354,7 @@ export class ConflictResolver implements IConflictResolver {
       [RiskLevel.LOW]: 0,
       [RiskLevel.MEDIUM]: 1,
       [RiskLevel.HIGH]: 2,
-      [RiskLevel.CRITICAL]: 3
+      [RiskLevel.CRITICAL]: 3,
     };
     return riskOrder[a] - riskOrder[b];
   }
@@ -371,7 +366,7 @@ export class ConflictResolver implements IConflictResolver {
     return changes.filter(change => {
       if (change.changeType === 'remove') return true;
       if (change.changeType === 'install') return false;
-      
+
       try {
         const fromMajor = semver.major(change.fromVersion);
         const toMajor = semver.major(change.toVersion);
@@ -390,7 +385,7 @@ export class ConflictResolver implements IConflictResolver {
       [ResolutionStrategy.UPDATE_TO_COMPATIBLE]: 0,
       [ResolutionStrategy.ADD_PEER_DEPENDENCY]: 1,
       [ResolutionStrategy.DOWNGRADE_TO_COMPATIBLE]: 2,
-      [ResolutionStrategy.REMOVE_CONFLICTING]: 3
+      [ResolutionStrategy.REMOVE_CONFLICTING]: 3,
     };
     return strategyOrder[a] - strategyOrder[b];
   }
@@ -414,7 +409,7 @@ export class ConflictResolver implements IConflictResolver {
     // Simplified check - in real implementation would analyze version ranges
     const versions = conflict.packages.map(p => p.version).filter(v => semver.valid(v));
     if (versions.length < 2) return false;
-    
+
     // Check if all versions have different major versions
     const majorVersions = new Set(versions.map(v => semver.major(v)));
     return majorVersions.size === versions.length && versions.length > 2;
@@ -425,13 +420,13 @@ export class ConflictResolver implements IConflictResolver {
    */
   private groupIssuesByPackage(issues: DependencyIssue[]): Map<string, DependencyIssue[]> {
     const grouped = new Map<string, DependencyIssue[]>();
-    
+
     for (const issue of issues) {
       const existing = grouped.get(issue.packageName) || [];
       existing.push(issue);
       grouped.set(issue.packageName, existing);
     }
-    
+
     return grouped;
   }
 
@@ -440,33 +435,32 @@ export class ConflictResolver implements IConflictResolver {
    */
   private detectVersionRangeConflicts(packageIssues: Map<string, DependencyIssue[]>): Conflict[] {
     const conflicts: Conflict[] = [];
-    
+
     for (const [packageName, issues] of packageIssues) {
       // Look for version mismatch and peer conflict issues for the same package
-      const versionIssues = issues.filter(issue => 
-        issue.type === IssueType.VERSION_MISMATCH || 
-        issue.type === IssueType.PEER_CONFLICT
+      const versionIssues = issues.filter(
+        issue => issue.type === IssueType.VERSION_MISMATCH || issue.type === IssueType.PEER_CONFLICT
       );
-      
+
       if (versionIssues.length > 1) {
         const conflictingPackages: ConflictingPackage[] = versionIssues.map(issue => ({
           name: packageName,
           version: issue.currentVersion || 'unknown',
           requiredBy: this.extractRequiredBy(issue.description),
-          conflictsWith: this.extractConflictsWith(issue.description)
+          conflictsWith: this.extractConflictsWith(issue.description),
         }));
-        
+
         const severity = this.determineConflictSeverity(versionIssues);
-        
+
         conflicts.push({
           type: ConflictType.VERSION_RANGE,
           packages: conflictingPackages,
           description: `Version range conflict for ${packageName}: multiple incompatible version requirements`,
-          severity
+          severity,
         });
       }
     }
-    
+
     return conflicts;
   }
 
@@ -475,29 +469,29 @@ export class ConflictResolver implements IConflictResolver {
    */
   private detectPeerDependencyConflicts(packageIssues: Map<string, DependencyIssue[]>): Conflict[] {
     const conflicts: Conflict[] = [];
-    
+
     for (const [packageName, issues] of packageIssues) {
       const peerIssues = issues.filter(issue => issue.type === IssueType.PEER_CONFLICT);
-      
+
       if (peerIssues.length > 0) {
         const conflictingPackages: ConflictingPackage[] = peerIssues.map(issue => ({
           name: packageName,
           version: issue.currentVersion || 'unknown',
           requiredBy: this.extractRequiredBy(issue.description),
-          conflictsWith: this.extractConflictsWith(issue.description)
+          conflictsWith: this.extractConflictsWith(issue.description),
         }));
-        
+
         const severity = this.determineConflictSeverity(peerIssues);
-        
+
         conflicts.push({
           type: ConflictType.PEER_DEPENDENCY,
           packages: conflictingPackages,
           description: `Peer dependency conflict for ${packageName}: incompatible peer requirements`,
-          severity
+          severity,
         });
       }
     }
-    
+
     return conflicts;
   }
 
@@ -506,13 +500,12 @@ export class ConflictResolver implements IConflictResolver {
    */
   private async detectTransitiveConflicts(analysis: AnalysisResult): Promise<Conflict[]> {
     const conflicts: Conflict[] = [];
-    
+
     // Look for packages that have multiple version requirements through different paths
-    const transitiveIssues = analysis.issues.filter(issue => 
-      issue.description.includes('transitive') || 
-      issue.description.includes('indirect')
+    const transitiveIssues = analysis.issues.filter(
+      issue => issue.description.includes('transitive') || issue.description.includes('indirect')
     );
-    
+
     // Group transitive issues by package
     const transitiveGroups = new Map<string, DependencyIssue[]>();
     for (const issue of transitiveIssues) {
@@ -520,27 +513,27 @@ export class ConflictResolver implements IConflictResolver {
       existing.push(issue);
       transitiveGroups.set(issue.packageName, existing);
     }
-    
+
     for (const [packageName, issues] of transitiveGroups) {
       if (issues.length > 1) {
         const conflictingPackages: ConflictingPackage[] = issues.map(issue => ({
           name: packageName,
           version: issue.currentVersion || 'unknown',
           requiredBy: this.extractRequiredBy(issue.description),
-          conflictsWith: this.extractConflictsWith(issue.description)
+          conflictsWith: this.extractConflictsWith(issue.description),
         }));
-        
+
         const severity = this.determineConflictSeverity(issues);
-        
+
         conflicts.push({
           type: ConflictType.TRANSITIVE,
           packages: conflictingPackages,
           description: `Transitive dependency conflict for ${packageName}: multiple version requirements through dependency chain`,
-          severity
+          severity,
         });
       }
     }
-    
+
     return conflicts;
   }
 
@@ -552,7 +545,7 @@ export class ConflictResolver implements IConflictResolver {
       case ConflictType.PEER_DEPENDENCY:
         // For peer conflicts, usually need to add the peer dependency
         return ResolutionStrategy.ADD_PEER_DEPENDENCY;
-        
+
       case ConflictType.VERSION_RANGE:
         // For version range conflicts, try to find compatible version
         if (this.canUpdateToCompatible(conflict)) {
@@ -562,11 +555,11 @@ export class ConflictResolver implements IConflictResolver {
         } else {
           return ResolutionStrategy.REMOVE_CONFLICTING;
         }
-        
+
       case ConflictType.TRANSITIVE:
         // For transitive conflicts, usually update to compatible version
         return ResolutionStrategy.UPDATE_TO_COMPATIBLE;
-        
+
       default:
         return ResolutionStrategy.UPDATE_TO_COMPATIBLE;
     }
@@ -575,9 +568,12 @@ export class ConflictResolver implements IConflictResolver {
   /**
    * Generates package changes based on resolution strategy
    */
-  private async generatePackageChanges(conflict: Conflict, strategy: ResolutionStrategy): Promise<PackageChange[]> {
+  private async generatePackageChanges(
+    conflict: Conflict,
+    strategy: ResolutionStrategy
+  ): Promise<PackageChange[]> {
     const changes: PackageChange[] = [];
-    
+
     switch (strategy) {
       case ResolutionStrategy.UPDATE_TO_COMPATIBLE:
         for (const pkg of conflict.packages) {
@@ -587,12 +583,12 @@ export class ConflictResolver implements IConflictResolver {
               packageName: pkg.name,
               fromVersion: pkg.version,
               toVersion: compatibleVersion,
-              changeType: 'update'
+              changeType: 'update',
             });
           }
         }
         break;
-        
+
       case ResolutionStrategy.DOWNGRADE_TO_COMPATIBLE:
         for (const pkg of conflict.packages) {
           const compatibleVersion = await this.findCompatibleVersion(pkg, 'downgrade');
@@ -601,12 +597,12 @@ export class ConflictResolver implements IConflictResolver {
               packageName: pkg.name,
               fromVersion: pkg.version,
               toVersion: compatibleVersion,
-              changeType: 'downgrade'
+              changeType: 'downgrade',
             });
           }
         }
         break;
-        
+
       case ResolutionStrategy.ADD_PEER_DEPENDENCY:
         // Find the peer dependency that needs to be added
         const peerToAdd = this.findMissingPeerDependency(conflict);
@@ -615,11 +611,11 @@ export class ConflictResolver implements IConflictResolver {
             packageName: peerToAdd.name,
             fromVersion: 'not-installed',
             toVersion: peerToAdd.version,
-            changeType: 'install'
+            changeType: 'install',
           });
         }
         break;
-        
+
       case ResolutionStrategy.REMOVE_CONFLICTING:
         // Remove the most problematic package
         const packageToRemove = this.findMostProblematicPackage(conflict);
@@ -628,12 +624,12 @@ export class ConflictResolver implements IConflictResolver {
             packageName: packageToRemove.name,
             fromVersion: packageToRemove.version,
             toVersion: 'removed',
-            changeType: 'remove'
+            changeType: 'remove',
           });
         }
         break;
     }
-    
+
     return changes;
   }
 
@@ -644,35 +640,35 @@ export class ConflictResolver implements IConflictResolver {
     let riskLevel = RiskLevel.LOW;
     const factors: string[] = [];
     const mitigations: string[] = [];
-    
+
     // Assess risk based on conflict severity
     if (conflict.severity === ConflictSeverity.CRITICAL) {
       riskLevel = RiskLevel.HIGH;
       factors.push('Critical conflict requires immediate attention');
     }
-    
+
     // Assess risk based on number of changes
     if (changes.length > 3) {
       riskLevel = this.increaseRiskLevel(riskLevel);
       factors.push(`Multiple packages affected (${changes.length} changes)`);
     }
-    
+
     // Assess risk based on change types
     const hasRemovals = changes.some(c => c.changeType === 'remove');
     const hasDowngrades = changes.some(c => c.changeType === 'downgrade');
-    
+
     if (hasRemovals) {
       riskLevel = this.increaseRiskLevel(riskLevel);
       factors.push('Package removal may break functionality');
       mitigations.push('Test thoroughly after removal');
     }
-    
+
     if (hasDowngrades) {
       riskLevel = this.increaseRiskLevel(riskLevel);
       factors.push('Version downgrades may remove features');
       mitigations.push('Review changelog for breaking changes');
     }
-    
+
     // Assess risk based on major version changes
     const hasMajorVersionChanges = changes.some(c => {
       if (c.changeType === 'remove' || c.toVersion === 'removed') return false;
@@ -682,34 +678,38 @@ export class ConflictResolver implements IConflictResolver {
         return false;
       }
     });
-    
+
     if (hasMajorVersionChanges) {
       riskLevel = this.increaseRiskLevel(riskLevel);
       factors.push('Major version changes may introduce breaking changes');
       mitigations.push('Review migration guides and test extensively');
     }
-    
+
     // Add general mitigations
     if (riskLevel !== RiskLevel.LOW) {
       mitigations.push('Create backup before applying changes');
       mitigations.push('Run full test suite after resolution');
     }
-    
+
     return {
       level: riskLevel,
       factors,
-      mitigations
+      mitigations,
     };
   }
 
   /**
    * Generates human-readable explanation for the resolution
    */
-  private generateResolutionExplanation(conflict: Conflict, strategy: ResolutionStrategy, changes: PackageChange[]): string {
+  private generateResolutionExplanation(
+    conflict: Conflict,
+    strategy: ResolutionStrategy,
+    changes: PackageChange[]
+  ): string {
     const packageNames = conflict.packages.map(p => p.name).join(', ');
-    
+
     let explanation = `Resolving ${conflict.type} conflict for ${packageNames}:\n\n`;
-    
+
     switch (strategy) {
       case ResolutionStrategy.UPDATE_TO_COMPATIBLE:
         explanation += 'Strategy: Update packages to compatible versions\n';
@@ -724,7 +724,7 @@ export class ConflictResolver implements IConflictResolver {
         explanation += 'Strategy: Remove conflicting package\n';
         break;
     }
-    
+
     explanation += '\nChanges to be made:\n';
     for (const change of changes) {
       switch (change.changeType) {
@@ -742,11 +742,11 @@ export class ConflictResolver implements IConflictResolver {
           break;
       }
     }
-    
+
     if (changes.length === 0) {
       explanation += '- No changes required (conflict may be resolved by other means)\n';
     }
-    
+
     return explanation;
   }
 
@@ -756,7 +756,7 @@ export class ConflictResolver implements IConflictResolver {
     const severityOrder = {
       [ConflictSeverity.CRITICAL]: 0,
       [ConflictSeverity.ERROR]: 1,
-      [ConflictSeverity.WARNING]: 2
+      [ConflictSeverity.WARNING]: 2,
     };
     return severityOrder[a] - severityOrder[b];
   }
@@ -764,7 +764,7 @@ export class ConflictResolver implements IConflictResolver {
   private determineConflictSeverity(issues: DependencyIssue[]): ConflictSeverity {
     const hasCritical = issues.some(issue => issue.severity === IssueSeverity.CRITICAL);
     const hasHigh = issues.some(issue => issue.severity === IssueSeverity.HIGH);
-    
+
     if (hasCritical) return ConflictSeverity.CRITICAL;
     if (hasHigh) return ConflictSeverity.ERROR;
     return ConflictSeverity.WARNING;
@@ -789,10 +789,15 @@ export class ConflictResolver implements IConflictResolver {
 
   private canDowngradeToCompatible(conflict: Conflict): boolean {
     // Simplified logic - in real implementation would check if downgrade is safe
-    return conflict.packages.some(pkg => semver.valid(pkg.version) && semver.gt(pkg.version, '1.0.0'));
+    return conflict.packages.some(
+      pkg => semver.valid(pkg.version) && semver.gt(pkg.version, '1.0.0')
+    );
   }
 
-  private async findCompatibleVersion(pkg: ConflictingPackage, direction: 'update' | 'downgrade'): Promise<string | null> {
+  private async findCompatibleVersion(
+    pkg: ConflictingPackage,
+    direction: 'update' | 'downgrade'
+  ): Promise<string | null> {
     // Simplified implementation - in real implementation would query registry
     try {
       if (direction === 'update') {
@@ -811,7 +816,7 @@ export class ConflictResolver implements IConflictResolver {
     if (firstPackage) {
       return {
         name: firstPackage.name + '-peer',
-        version: '1.0.0'
+        version: '1.0.0',
       };
     }
     return null;
@@ -819,9 +824,12 @@ export class ConflictResolver implements IConflictResolver {
 
   private findMostProblematicPackage(conflict: Conflict): ConflictingPackage | null {
     // Return the package with the most conflicts
-    return conflict.packages.reduce((most, current) => {
-      return current.conflictsWith.length > (most?.conflictsWith.length || 0) ? current : most;
-    }, null as ConflictingPackage | null);
+    return conflict.packages.reduce(
+      (most, current) => {
+        return current.conflictsWith.length > (most?.conflictsWith.length || 0) ? current : most;
+      },
+      null as ConflictingPackage | null
+    );
   }
 
   private increaseRiskLevel(currentLevel: RiskLevel): RiskLevel {

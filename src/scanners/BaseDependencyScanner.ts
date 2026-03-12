@@ -5,7 +5,6 @@ import { DependencyScanner, ScanContext, ScanResult, ScannerType } from '../core
  * Provides common functionality and enforces the scanner interface
  */
 export abstract class BaseDependencyScanner implements DependencyScanner {
-  
   abstract scan(context: ScanContext): Promise<ScanResult>;
   abstract getScannerType(): ScannerType;
 
@@ -16,11 +15,11 @@ export abstract class BaseDependencyScanner implements DependencyScanner {
     if (!context.projectPath) {
       throw new Error('Project path is required in scan context');
     }
-    
+
     if (!context.packageJson) {
       throw new Error('Package.json is required in scan context');
     }
-    
+
     if (!context.packageManager) {
       throw new Error('Package manager adapter is required in scan context');
     }
@@ -33,7 +32,7 @@ export abstract class BaseDependencyScanner implements DependencyScanner {
     return {
       scannerType: this.getScannerType(),
       issues: [],
-      securityIssues: []
+      securityIssues: [],
     };
   }
 
@@ -41,24 +40,28 @@ export abstract class BaseDependencyScanner implements DependencyScanner {
    * Checks if a package is a development dependency
    */
   protected isDevDependency(packageName: string, context: ScanContext): boolean {
-    return !!(context.packageJson.devDependencies && 
-              context.packageJson.devDependencies[packageName]);
+    return !!(
+      context.packageJson.devDependencies && context.packageJson.devDependencies[packageName]
+    );
   }
 
   /**
    * Checks if a package is an optional dependency
    */
   protected isOptionalDependency(packageName: string, context: ScanContext): boolean {
-    return !!(context.packageJson.optionalDependencies && 
-              context.packageJson.optionalDependencies[packageName]);
+    return !!(
+      context.packageJson.optionalDependencies &&
+      context.packageJson.optionalDependencies[packageName]
+    );
   }
 
   /**
    * Checks if a package is a peer dependency
    */
   protected isPeerDependency(packageName: string, context: ScanContext): boolean {
-    return !!(context.packageJson.peerDependencies && 
-              context.packageJson.peerDependencies[packageName]);
+    return !!(
+      context.packageJson.peerDependencies && context.packageJson.peerDependencies[packageName]
+    );
   }
 
   /**
@@ -69,19 +72,19 @@ export abstract class BaseDependencyScanner implements DependencyScanner {
     if (context.packageJson.dependencies?.[packageName]) {
       return context.packageJson.dependencies[packageName];
     }
-    
+
     if (context.packageJson.devDependencies?.[packageName]) {
       return context.packageJson.devDependencies[packageName];
     }
-    
+
     if (context.packageJson.peerDependencies?.[packageName]) {
       return context.packageJson.peerDependencies[packageName];
     }
-    
+
     if (context.packageJson.optionalDependencies?.[packageName]) {
       return context.packageJson.optionalDependencies[packageName];
     }
-    
+
     return undefined;
   }
 
@@ -90,13 +93,13 @@ export abstract class BaseDependencyScanner implements DependencyScanner {
    */
   protected getAllDeclaredDependencies(context: ScanContext): Record<string, string> {
     const allDeps: Record<string, string> = {};
-    
+
     // Merge all dependency types
     Object.assign(allDeps, context.packageJson.dependencies || {});
     Object.assign(allDeps, context.packageJson.devDependencies || {});
     Object.assign(allDeps, context.packageJson.peerDependencies || {});
     Object.assign(allDeps, context.packageJson.optionalDependencies || {});
-    
+
     return allDeps;
   }
 

@@ -10,7 +10,7 @@ import {
   FixType,
   RiskLevel,
   FixAction,
-  PackageManagerType
+  PackageManagerType,
 } from '../core/types';
 import { SuggestionEngine } from './SuggestionEngine';
 
@@ -36,11 +36,10 @@ export class AutoFixer implements IAutoFixer {
   async generateFixes(analysis: AnalysisResult): Promise<FixSuggestion[]> {
     // Use the suggestion engine to generate comprehensive fix suggestions
     const suggestions = await this.suggestionEngine.generateSuggestions(analysis);
-    
+
     // Filter to only include fixable suggestions with concrete actions
-    return suggestions.filter(suggestion => 
-      suggestion.actions.length > 0 && 
-      this.isFixable(suggestion)
+    return suggestions.filter(
+      suggestion => suggestion.actions.length > 0 && this.isFixable(suggestion)
     );
   }
 
@@ -52,7 +51,7 @@ export class AutoFixer implements IAutoFixer {
     const result: FixResult = {
       success: false,
       appliedFixes: [],
-      errors: []
+      errors: [],
     };
 
     if (fixes.length === 0) {
@@ -63,7 +62,7 @@ export class AutoFixer implements IAutoFixer {
     try {
       // Create backup before making any modifications
       result.backup = await this.createBackup(this.projectPath);
-      
+
       // Apply fixes sequentially to avoid conflicts
       for (const fix of fixes) {
         try {
@@ -72,7 +71,7 @@ export class AutoFixer implements IAutoFixer {
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : String(error);
           result.errors.push(`Failed to apply fix "${fix.description}": ${errorMessage}`);
-          
+
           // For critical errors, stop processing and restore backup
           if (fix.risk === RiskLevel.CRITICAL || this.isCriticalError(error)) {
             if (result.backup) {
@@ -80,7 +79,8 @@ export class AutoFixer implements IAutoFixer {
                 await this.restoreBackup(result.backup);
                 result.errors.push('Backup restored due to critical error');
               } catch (restoreError) {
-                const restoreMessage = restoreError instanceof Error ? restoreError.message : String(restoreError);
+                const restoreMessage =
+                  restoreError instanceof Error ? restoreError.message : String(restoreError);
                 result.errors.push(`Failed to restore backup: ${restoreMessage}`);
               }
             }
@@ -91,9 +91,9 @@ export class AutoFixer implements IAutoFixer {
 
       // Consider the operation successful if at least one fix was applied
       // and no critical errors occurred
-      result.success = result.appliedFixes.length > 0 && 
-                      !result.errors.some(error => error.includes('critical error'));
-
+      result.success =
+        result.appliedFixes.length > 0 &&
+        !result.errors.some(error => error.includes('critical error'));
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       result.errors.push(`Failed to apply fixes: ${errorMessage}`);
@@ -130,9 +130,8 @@ export class AutoFixer implements IAutoFixer {
       return {
         originalPath: packageJsonPath,
         backupPath: backupPath,
-        timestamp: timestamp
+        timestamp: timestamp,
       };
-
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       throw new Error(`Failed to create backup: ${errorMessage}`);
@@ -159,7 +158,6 @@ export class AutoFixer implements IAutoFixer {
 
       // Clean up backup file
       await fs.remove(backupInfo.backupPath);
-
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       throw new Error(`Failed to restore backup: ${errorMessage}`);
@@ -225,7 +223,7 @@ export class AutoFixer implements IAutoFixer {
     // 1. It has concrete actions that can be executed
     // 2. It's not just a recommendation without actionable steps
     // 3. The risk level is not critical (unless it's a security fix)
-    
+
     if (suggestion.actions.length === 0) {
       return false;
     }
@@ -262,9 +260,10 @@ export class AutoFixer implements IAutoFixer {
    */
   private isSecurityFix(suggestion: FixSuggestion): boolean {
     const securityKeywords = ['security', 'vulnerability', 'CVE', 'exploit', 'malicious'];
-    return securityKeywords.some(keyword => 
-      suggestion.description.toLowerCase().includes(keyword.toLowerCase()) ||
-      suggestion.estimatedImpact.toLowerCase().includes(keyword.toLowerCase())
+    return securityKeywords.some(
+      keyword =>
+        suggestion.description.toLowerCase().includes(keyword.toLowerCase()) ||
+        suggestion.estimatedImpact.toLowerCase().includes(keyword.toLowerCase())
     );
   }
 
@@ -282,11 +281,9 @@ export class AutoFixer implements IAutoFixer {
       'EMFILE', // Too many open files
       'package.json.*corrupt',
       'lockfile.*corrupt',
-      'network.*timeout'
+      'network.*timeout',
     ];
 
-    return criticalErrorPatterns.some(pattern => 
-      error.message.match(new RegExp(pattern, 'i'))
-    );
+    return criticalErrorPatterns.some(pattern => error.message.match(new RegExp(pattern, 'i')));
   }
 }

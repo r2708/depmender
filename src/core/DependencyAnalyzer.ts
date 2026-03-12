@@ -1,4 +1,4 @@
-import { 
+import {
   DependencyAnalyzer as IDependencyAnalyzer,
   AnalysisResult,
   HealthReport,
@@ -12,17 +12,17 @@ import {
   IssueSeverity,
   SecuritySeverity,
   HealthScoreFactors,
-  ScanResult
+  ScanResult,
 } from './types';
 import { ScannerRegistry } from '../scanners/ScannerRegistry';
 import { ScanContextFactory } from '../scanners/ScanContextFactory';
-import { 
+import {
   OutdatedScanner,
   MissingScanner,
   VersionMismatchScanner,
   BrokenScanner,
   PeerConflictScanner,
-  SecurityScanner
+  SecurityScanner,
 } from '../scanners';
 import { HealthReporter } from '../reporters';
 import { SuggestionEngine } from '../fixers/SuggestionEngine';
@@ -49,7 +49,7 @@ export class DependencyAnalyzer implements IDependencyAnalyzer {
    */
   private initializeScanners(): void {
     this.logger.debug('Initializing scanners');
-    
+
     this.scannerRegistry.register(new OutdatedScanner());
     this.scannerRegistry.register(new MissingScanner());
     this.scannerRegistry.register(new VersionMismatchScanner());
@@ -66,11 +66,11 @@ export class DependencyAnalyzer implements IDependencyAnalyzer {
       // Create scan context
       this.logger.debug('Creating scan context');
       const context = await ScanContextFactory.createContext(projectPath);
-      
+
       // Run all scanners
       this.logger.debug('Running all scanners');
       const scanResults = await this.scannerRegistry.runAllScanners(context);
-      
+
       // Aggregate results with deduplication and validation
       this.logger.debug('Aggregating scan results');
       const aggregatedResults = this.aggregateResults(scanResults);
@@ -80,13 +80,13 @@ export class DependencyAnalyzer implements IDependencyAnalyzer {
         name: context.packageJson.name,
         version: context.packageJson.version,
         path: projectPath,
-        packageManager: context.packageManager.getType()
+        packageManager: context.packageManager.getType(),
       };
 
       // Calculate health score
       this.logger.debug('Calculating health score');
       const healthScore = this.calculateHealthScore(
-        aggregatedResults.issues, 
+        aggregatedResults.issues,
         aggregatedResults.securityVulnerabilities
       );
 
@@ -95,7 +95,7 @@ export class DependencyAnalyzer implements IDependencyAnalyzer {
         issues: aggregatedResults.issues,
         packageManager: context.packageManager.getType(),
         projectInfo,
-        securityVulnerabilities: aggregatedResults.securityVulnerabilities
+        securityVulnerabilities: aggregatedResults.securityVulnerabilities,
       };
 
       return result;
@@ -113,7 +113,7 @@ export class DependencyAnalyzer implements IDependencyAnalyzer {
     securityVulnerabilities: SecurityIssue[];
   } {
     this.logger.debug('Starting result aggregation');
-    
+
     const issues: DependencyIssue[] = [];
     const securityVulnerabilities: SecurityIssue[] = [];
     const seenIssues = new Set<string>();
@@ -126,7 +126,9 @@ export class DependencyAnalyzer implements IDependencyAnalyzer {
         continue;
       }
 
-      this.logger.debug(`Processing ${result.issues.length} issues from ${result.scannerType} scanner`);
+      this.logger.debug(
+        `Processing ${result.issues.length} issues from ${result.scannerType} scanner`
+      );
 
       // Aggregate dependency issues with deduplication
       for (const issue of result.issues) {
@@ -145,8 +147,10 @@ export class DependencyAnalyzer implements IDependencyAnalyzer {
 
       // Aggregate security vulnerabilities with deduplication
       if (result.securityIssues && Array.isArray(result.securityIssues)) {
-        this.logger.debug(`Processing ${result.securityIssues.length} security issues from ${result.scannerType} scanner`);
-        
+        this.logger.debug(
+          `Processing ${result.securityIssues.length} security issues from ${result.scannerType} scanner`
+        );
+
         for (const vulnerability of result.securityIssues) {
           if (this.isValidSecurityIssue(vulnerability)) {
             const vulnKey = this.createVulnerabilityKey(vulnerability);
@@ -167,7 +171,9 @@ export class DependencyAnalyzer implements IDependencyAnalyzer {
     issues.sort((a, b) => this.compareSeverity(a.severity, b.severity));
     securityVulnerabilities.sort((a, b) => this.compareSecuritySeverity(a.severity, b.severity));
 
-    this.logger.debug(`Aggregation complete: ${issues.length} issues, ${securityVulnerabilities.length} vulnerabilities`);
+    this.logger.debug(
+      `Aggregation complete: ${issues.length} issues, ${securityVulnerabilities.length} vulnerabilities`
+    );
     return { issues, securityVulnerabilities };
   }
 
@@ -178,7 +184,7 @@ export class DependencyAnalyzer implements IDependencyAnalyzer {
     if (!issue || typeof issue !== 'object') {
       return false;
     }
-    
+
     return (
       typeof issue.type === 'string' &&
       typeof issue.packageName === 'string' &&
@@ -197,7 +203,7 @@ export class DependencyAnalyzer implements IDependencyAnalyzer {
     if (!issue || typeof issue !== 'object') {
       return false;
     }
-    
+
     return (
       typeof issue.packageName === 'string' &&
       typeof issue.version === 'string' &&
@@ -233,7 +239,7 @@ export class DependencyAnalyzer implements IDependencyAnalyzer {
       [IssueSeverity.CRITICAL]: 0,
       [IssueSeverity.HIGH]: 1,
       [IssueSeverity.MEDIUM]: 2,
-      [IssueSeverity.LOW]: 3
+      [IssueSeverity.LOW]: 3,
     };
     return severityOrder[a] - severityOrder[b];
   }
@@ -246,7 +252,7 @@ export class DependencyAnalyzer implements IDependencyAnalyzer {
       [SecuritySeverity.CRITICAL]: 0,
       [SecuritySeverity.HIGH]: 1,
       [SecuritySeverity.MODERATE]: 2,
-      [SecuritySeverity.LOW]: 3
+      [SecuritySeverity.LOW]: 3,
     };
     return severityOrder[a] - severityOrder[b];
   }
@@ -264,16 +270,16 @@ export class DependencyAnalyzer implements IDependencyAnalyzer {
     // Apply weighted deductions based on health score factors
     // Security issues: Weight 40%
     score -= factors.securityIssues * 0.4;
-    
+
     // Missing packages: Weight 15%
     score -= factors.missingPackages * 0.15;
-    
+
     // Peer conflicts: Weight 15%
     score -= factors.peerConflicts * 0.15;
-    
+
     // Outdated packages: Weight 20%
     score -= factors.outdatedPackages * 0.2;
-    
+
     // Broken installations: Weight 10%
     score -= factors.brokenInstallations * 0.1;
 
@@ -284,19 +290,22 @@ export class DependencyAnalyzer implements IDependencyAnalyzer {
   /**
    * Categorizes issues into health score factors with severity-based scoring
    */
-  private categorizeIssues(issues: DependencyIssue[], securityIssues: SecurityIssue[]): HealthScoreFactors {
+  private categorizeIssues(
+    issues: DependencyIssue[],
+    securityIssues: SecurityIssue[]
+  ): HealthScoreFactors {
     const factors: HealthScoreFactors = {
       outdatedPackages: 0,
       securityIssues: 0,
       peerConflicts: 0,
       missingPackages: 0,
-      brokenInstallations: 0
+      brokenInstallations: 0,
     };
 
     // Process dependency issues
     for (const issue of issues) {
       const severityMultiplier = this.getSeverityMultiplier(issue.severity);
-      
+
       switch (issue.type) {
         case IssueType.OUTDATED:
           factors.outdatedPackages += severityMultiplier;
@@ -385,7 +394,9 @@ export class DependencyAnalyzer implements IDependencyAnalyzer {
   async applyFixes(fixes: FixSuggestion[]): Promise<FixResult> {
     // This method is not typically called directly - the FixCommand handles this
     // But we provide a basic implementation for completeness
-    throw new Error('applyFixes should be called through the FixCommand, not directly on DependencyAnalyzer');
+    throw new Error(
+      'applyFixes should be called through the FixCommand, not directly on DependencyAnalyzer'
+    );
   }
 
   /**

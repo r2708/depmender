@@ -1,11 +1,11 @@
 import * as fs from 'fs-extra';
 import * as path from 'path';
-import { 
-  PackageManagerAdapter, 
-  PackageManagerType, 
-  Lockfile, 
+import {
+  PackageManagerAdapter,
+  PackageManagerType,
+  Lockfile,
   InstalledPackage,
-  PackageJson 
+  PackageJson,
 } from '../core/types';
 
 /**
@@ -31,14 +31,14 @@ export abstract class BasePackageManagerAdapter implements PackageManagerAdapter
    */
   async readPackageJson(): Promise<PackageJson> {
     const packageJsonPath = path.join(this.projectPath, 'package.json');
-    
+
     if (!(await fs.pathExists(packageJsonPath))) {
       throw new Error(`package.json not found at ${packageJsonPath}`);
     }
 
     try {
       const packageJson = await fs.readJson(packageJsonPath);
-      
+
       // Validate required fields
       if (!packageJson.name || !packageJson.version) {
         throw new Error('package.json must contain name and version fields');
@@ -58,16 +58,16 @@ export abstract class BasePackageManagerAdapter implements PackageManagerAdapter
    */
   async getInstalledPackages(projectPath: string): Promise<InstalledPackage[]> {
     const nodeModulesPath = path.join(projectPath, 'node_modules');
-    
+
     if (!(await fs.pathExists(nodeModulesPath))) {
       return [];
     }
 
     const installedPackages: InstalledPackage[] = [];
-    
+
     try {
       const entries = await fs.readdir(nodeModulesPath, { withFileTypes: true });
-      
+
       for (const entry of entries) {
         if (entry.isDirectory()) {
           // Handle scoped packages (e.g., @types/node)
@@ -99,10 +99,10 @@ export abstract class BasePackageManagerAdapter implements PackageManagerAdapter
    */
   private async getScopedPackages(scopePath: string): Promise<InstalledPackage[]> {
     const scopedPackages: InstalledPackage[] = [];
-    
+
     try {
       const entries = await fs.readdir(scopePath, { withFileTypes: true });
-      
+
       for (const entry of entries) {
         if (entry.isDirectory()) {
           const scopeName = path.basename(scopePath);
@@ -127,35 +127,35 @@ export abstract class BasePackageManagerAdapter implements PackageManagerAdapter
    * Gets package information from a package directory
    */
   private async getPackageInfo(
-    packagePath: string, 
+    packagePath: string,
     packageName: string
   ): Promise<InstalledPackage | null> {
     try {
       const packageJsonPath = path.join(packagePath, 'package.json');
-      
+
       if (!(await fs.pathExists(packageJsonPath))) {
         return {
           name: packageName,
           version: 'unknown',
           path: packagePath,
-          isValid: false
+          isValid: false,
         };
       }
 
       const packageJson = await fs.readJson(packageJsonPath);
-      
+
       return {
         name: packageName,
         version: packageJson.version || 'unknown',
         path: packagePath,
-        isValid: true
+        isValid: true,
       };
     } catch (error) {
       return {
         name: packageName,
         version: 'unknown',
         path: packagePath,
-        isValid: false
+        isValid: false,
       };
     }
   }
@@ -173,7 +173,7 @@ export abstract class BasePackageManagerAdapter implements PackageManagerAdapter
 
       // Check if package.json is valid JSON
       await fs.readJson(packageJsonPath);
-      
+
       return true;
     } catch (error) {
       return false;

@@ -6,7 +6,6 @@ import { CLIFormatter } from './CLIFormatter';
  * Requirement 6.7: Comprehensive help documentation
  */
 export class HelpSystem {
-  
   /**
    * Gets comprehensive help documentation
    */
@@ -18,8 +17,8 @@ export class HelpSystem {
           'DepMender is a comprehensive CLI tool for analyzing, reporting, and fixing',
           'dependency issues in JavaScript/TypeScript projects. It supports npm, yarn,',
           'and pnpm package managers and provides intelligent suggestions for maintaining',
-          'healthy project dependencies.'
-        ]
+          'healthy project dependencies.',
+        ],
       },
       {
         title: 'USAGE',
@@ -31,8 +30,9 @@ export class HelpSystem {
           '  report   Generate detailed dependency health report',
           '  fix      Automatically fix all dependency issues',
           '  upgrade  Upgrade all dependencies to latest versions',
-          '  init     Initialize depmender configuration file'
-        ]
+          '  init     Initialize depmender configuration file',
+          '  cache    Manage depmender cache (clear, stats, info)',
+        ],
       },
       {
         title: 'GLOBAL OPTIONS',
@@ -41,8 +41,8 @@ export class HelpSystem {
           '--json               Output results in JSON format',
           '--verbose            Enable verbose output with additional details',
           '-h, --help           Display help information',
-          '-V, --version        Display version number'
-        ]
+          '-V, --version        Display version number',
+        ],
       },
       {
         title: 'EXAMPLES',
@@ -56,8 +56,8 @@ export class HelpSystem {
           'Advanced usage:',
           '  depmender check --path ./my-app   # Check specific directory',
           '  depmender report --json > report.json  # Export JSON report',
-          '  depmender fix --path ./backend    # Fix specific project'
-        ]
+          '  depmender fix --path ./backend    # Fix specific project',
+        ],
       },
       {
         title: 'WORKFLOW',
@@ -67,9 +67,9 @@ export class HelpSystem {
           '3. Run "depmender fix" to apply automated fixes',
           '4. Run "depmender upgrade" to upgrade all dependencies',
           '5. Test your application after applying changes',
-          '6. Re-run check to verify all issues are resolved'
-        ]
-      }
+          '6. Re-run check to verify all issues are resolved',
+        ],
+      },
     ];
 
     return CLIFormatter.helpText(sections);
@@ -84,22 +84,20 @@ export class HelpSystem {
         title: 'REPORT COMMAND',
         content: [
           'Generates a comprehensive dependency health report with detailed analysis,',
-          'security vulnerabilities, and actionable recommendations.'
-        ]
+          'security vulnerabilities, and actionable recommendations.',
+        ],
       },
       {
         title: 'USAGE',
-        content: [
-          'depmender report [options]'
-        ]
+        content: ['depmender report [options]'],
       },
       {
         title: 'OPTIONS',
         content: [
           '-p, --path <path>    Project path to analyze (default: current directory)',
           '--json               Output report in JSON format',
-          '--verbose            Include additional metadata and pro tips'
-        ]
+          '--verbose            Include additional metadata and pro tips',
+        ],
       },
       {
         title: 'REPORT SECTIONS',
@@ -110,17 +108,17 @@ export class HelpSystem {
           '• Security vulnerabilities with CVSS scores',
           '• Outdated packages with version information',
           '• Peer dependency conflicts',
-          '• Prioritized recommendations with commands'
-        ]
+          '• Prioritized recommendations with commands',
+        ],
       },
       {
         title: 'EXAMPLES',
         content: [
           'depmender report                   # Generate full report',
           'depmender report --verbose         # Include additional details',
-          'depmender report --json > report.json  # Export to file'
-        ]
-      }
+          'depmender report --json > report.json  # Export to file',
+        ],
+      },
     ];
 
     return CLIFormatter.helpText(sections);
@@ -135,22 +133,20 @@ export class HelpSystem {
         title: 'FIX COMMAND',
         content: [
           'Automatically applies fixes for detected dependency issues.',
-          'Creates backups before making changes and provides detailed feedback.'
-        ]
+          'Creates backups before making changes and provides detailed feedback.',
+        ],
       },
       {
         title: 'USAGE',
-        content: [
-          'depmender fix [options]'
-        ]
+        content: ['depmender fix [options]'],
       },
       {
         title: 'OPTIONS',
         content: [
           '-p, --path <path>    Project path to fix (default: current directory)',
           '-y, --yes            Automatically confirm all fixes without prompting',
-          '--verbose            Show detailed fix application process'
-        ]
+          '--verbose            Show detailed fix application process',
+        ],
       },
       {
         title: 'SAFETY FEATURES',
@@ -159,8 +155,8 @@ export class HelpSystem {
           '• Risk assessment for each fix',
           '• Confirmation prompts for potentially breaking changes',
           '• Rollback capability if fixes fail',
-          '• Detailed logging of all changes made'
-        ]
+          '• Detailed logging of all changes made',
+        ],
       },
       {
         title: 'FIX TYPES',
@@ -170,16 +166,16 @@ export class HelpSystem {
           '• Updating outdated packages (safe versions)',
           '• Resolving version conflicts',
           '• Regenerating corrupted lockfiles',
-          '• Fixing peer dependency issues'
-        ]
+          '• Fixing peer dependency issues',
+        ],
       },
       {
         title: 'EXAMPLES',
         content: [
           'depmender fix                      # Interactive fix with prompts',
           'depmender fix --yes                # Auto-fix without confirmation',
-          'depmender fix --path ./api         # Fix specific project'
-        ]
+          'depmender fix --path ./api         # Fix specific project',
+        ],
       },
       {
         title: 'POST-FIX RECOMMENDATIONS',
@@ -188,9 +184,9 @@ export class HelpSystem {
           '2. Run your test suite',
           '3. Check for any breaking changes',
           '4. Run "depmender scan" to verify fixes',
-          '5. Commit changes if everything works correctly'
-        ]
-      }
+          '5. Commit changes if everything works correctly',
+        ],
+      },
     ];
 
     return CLIFormatter.helpText(sections);
@@ -203,15 +199,13 @@ export class HelpSystem {
     const sections = [
       {
         title: 'TROUBLESHOOTING',
-        content: [
-          'Common issues and solutions when using DepMender.'
-        ]
+        content: ['Common issues and solutions when using DepMender.'],
       },
       {
         title: 'COMMON ISSUES',
         content: [
           'Issue: "package.json not found"',
-          'Solution: Make sure you\'re in a valid Node.js project directory',
+          "Solution: Make sure you're in a valid Node.js project directory",
           'Example: cd /path/to/your/project && depmender scan',
           '',
           'Issue: "Permission denied" errors',
@@ -224,21 +218,21 @@ export class HelpSystem {
           '',
           'Issue: "Analysis failed" errors',
           'Solution: Verify package.json is valid JSON and contains required fields',
-          'Example: depmender scan --path ./specific-project'
-        ]
+          'Example: depmender scan --path ./specific-project',
+        ],
       },
       {
         title: 'GETTING HELP',
         content: [
           'If you encounter issues:',
-          '1. Check that you\'re in a valid Node.js project',
+          "1. Check that you're in a valid Node.js project",
           '2. Ensure package.json exists and is valid',
           '3. Try running depmender scan --verbose for more details',
           '4. Check network connectivity for registry access',
           '5. Verify file and directory permissions',
-          '6. Use depmender help for general usage information'
-        ]
-      }
+          '6. Use depmender help for general usage information',
+        ],
+      },
     ];
 
     return CLIFormatter.helpText(sections);
@@ -251,9 +245,7 @@ export class HelpSystem {
     const sections = [
       {
         title: 'EXAMPLES & USE CASES',
-        content: [
-          'Common workflows and usage patterns for DepMender.'
-        ]
+        content: ['Common workflows and usage patterns for DepMender.'],
       },
       {
         title: 'DAILY DEVELOPMENT WORKFLOW',
@@ -268,8 +260,8 @@ export class HelpSystem {
           'depmender fix --yes',
           '',
           '# Upgrade all dependencies',
-          'depmender upgrade --yes'
-        ]
+          'depmender upgrade --yes',
+        ],
       },
       {
         title: 'CI/CD INTEGRATION',
@@ -278,11 +270,11 @@ export class HelpSystem {
           'depmender check --json > dependency-report.json',
           '',
           '# Fail build on critical issues',
-          'depmender check --json | jq \'.healthScore < 50\' && exit 1',
+          "depmender check --json | jq '.healthScore < 50' && exit 1",
           '',
           '# Auto-fix in CI (with caution)',
-          'depmender fix --yes && npm test'
-        ]
+          'depmender fix --yes && npm test',
+        ],
       },
       {
         title: 'MONOREPO USAGE',
@@ -294,8 +286,8 @@ export class HelpSystem {
           '# Generate reports for all packages',
           'for dir in packages/*/; do',
           '  depmender report --path "$dir" --json > "${dir}report.json"',
-          'done'
-        ]
+          'done',
+        ],
       },
       {
         title: 'SECURITY FOCUSED WORKFLOW',
@@ -304,12 +296,12 @@ export class HelpSystem {
           'depmender report | grep -A 10 "SECURITY VULNERABILITIES"',
           '',
           '# Export security report',
-          'depmender report --json | jq \'.securityIssues\' > security.json',
+          "depmender report --json | jq '.securityIssues' > security.json",
           '',
           '# Fix security issues first',
-          'depmender fix --yes  # Review security fixes carefully'
-        ]
-      }
+          'depmender fix --yes  # Review security fixes carefully',
+        ],
+      },
     ];
 
     return CLIFormatter.helpText(sections);

@@ -12,11 +12,11 @@ export class ScannerRegistry {
    */
   register(scanner: DependencyScanner): void {
     const scannerType = scanner.getScannerType();
-    
+
     if (this.scanners.has(scannerType)) {
       throw new Error(`Scanner of type ${scannerType} is already registered`);
     }
-    
+
     this.scanners.set(scannerType, scanner);
   }
 
@@ -60,11 +60,11 @@ export class ScannerRegistry {
    */
   async runScanner(scannerType: ScannerType, context: ScanContext): Promise<ScanResult> {
     const scanner = this.getScanner(scannerType);
-    
+
     if (!scanner) {
       throw new Error(`Scanner of type ${scannerType} is not registered`);
     }
-    
+
     return scanner.scan(context);
   }
 
@@ -73,9 +73,9 @@ export class ScannerRegistry {
    */
   async runAllScanners(context: ScanContext): Promise<ScanResult[]> {
     const scanners = this.getAllScanners();
-    
+
     // Run all scanners in parallel
-    const scanPromises = scanners.map(async (scanner) => {
+    const scanPromises = scanners.map(async scanner => {
       try {
         return await scanner.scan(context);
       } catch (error) {
@@ -84,15 +84,18 @@ export class ScannerRegistry {
         return {
           scannerType: scanner.getScannerType(),
           issues: [],
-          securityIssues: []
+          securityIssues: [],
         } as ScanResult;
       }
     });
-    
+
     const results = await Promise.all(scanPromises);
-    
+
     // Filter out empty results from failed scanners
-    return results.filter(result => result.issues.length > 0 || (result.securityIssues && result.securityIssues.length > 0));
+    return results.filter(
+      result =>
+        result.issues.length > 0 || (result.securityIssues && result.securityIssues.length > 0)
+    );
   }
 
   /**
@@ -100,7 +103,7 @@ export class ScannerRegistry {
    */
   async runScanners(scannerTypes: ScannerType[], context: ScanContext): Promise<ScanResult[]> {
     // Run specified scanners in parallel
-    const scanPromises = scannerTypes.map(async (scannerType) => {
+    const scanPromises = scannerTypes.map(async scannerType => {
       try {
         return await this.runScanner(scannerType, context);
       } catch (error) {
@@ -109,15 +112,18 @@ export class ScannerRegistry {
         return {
           scannerType,
           issues: [],
-          securityIssues: []
+          securityIssues: [],
         } as ScanResult;
       }
     });
-    
+
     const results = await Promise.all(scanPromises);
-    
+
     // Filter out empty results from failed scanners
-    return results.filter(result => result.issues.length > 0 || (result.securityIssues && result.securityIssues.length > 0));
+    return results.filter(
+      result =>
+        result.issues.length > 0 || (result.securityIssues && result.securityIssues.length > 0)
+    );
   }
 
   /**
@@ -140,7 +146,7 @@ export class ScannerRegistry {
    */
   static createDefault(): ScannerRegistry {
     const registry = new ScannerRegistry();
-    
+
     // Scanners will be registered here as they are implemented
     // registry.register(new OutdatedScanner());
     // registry.register(new MissingScanner());
@@ -148,7 +154,7 @@ export class ScannerRegistry {
     // registry.register(new PeerConflictScanner());
     // registry.register(new VersionMismatchScanner());
     // registry.register(new SecurityScanner());
-    
+
     return registry;
   }
 }

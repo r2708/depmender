@@ -4,6 +4,8 @@ import { DependencyAnalyzer } from '../core/DependencyAnalyzer';
 import { AutoFixer } from '../fixers/AutoFixer';
 import { ScanContextFactory } from '../scanners/ScanContextFactory';
 import { logger } from '../utils/Logger';
+import * as fs from 'fs-extra';
+import * as path from 'path';
 import ora from 'ora';
 
 /**
@@ -28,22 +30,27 @@ import ora from 'ora';
  */
 export class FixCommand extends BaseCommand {
   name = 'fix';
-  description = 'Automatically fix all dependency issues (install-missing, remove-unused, update-deps, dedupe, sync, resolve, and more)';
+  description =
+    'Automatically fix all dependency issues (install-missing, remove-unused, update-deps, dedupe, sync, resolve, and more)';
   private logger = logger.child('FixCommand');
 
   async execute(args: CommandArgs): Promise<CommandResult> {
     const spinner = ora('Preparing to fix dependency issues...').start();
-    
+
     try {
+      // Validate project path first
+      spinner.text = 'Validating project structure...';
+      await this.validateProject(args.projectPath);
+
       // Initialize components
       const analyzer = new DependencyAnalyzer();
-      
+
       // Show progress for long-running operations
       spinner.text = 'Analyzing project dependencies...';
-      
+
       // Perform the analysis first
       const analysis = await analyzer.analyze(args.projectPath);
-      
+
       // Check if there are any issues to fix
       if (analysis.issues.length === 0 && analysis.securityVulnerabilities.length === 0) {
         spinner.succeed('No issues found to fix!');
@@ -51,24 +58,24 @@ export class FixCommand extends BaseCommand {
         console.log(output);
         return this.createSuccessResult(output);
       }
-      
+
       spinner.text = 'Generating fix suggestions...';
-      
+
       // Generate fix suggestions
       const fixSuggestions = await analyzer.suggestFixes(analysis);
-      
+
       // Filter for automatically fixable issues
-      const autoFixable = fixSuggestions.filter(fix => 
-        fix.risk !== 'critical' && fix.actions.length > 0
+      const autoFixable = fixSuggestions.filter(
+        fix => fix.risk !== 'critical' && fix.actions.length > 0
       );
-      
+
       if (autoFixable.length === 0) {
         spinner.warn('No automatically fixable issues found');
         const output = this.formatManualFixesRequired(fixSuggestions);
         console.log(output);
         return this.createSuccessResult(output);
       }
-      
+
       // Ask for confirmation unless --yes flag is provided
       if (!args.options.yes && !args.options.y) {
         spinner.stop();
@@ -80,18 +87,18 @@ export class FixCommand extends BaseCommand {
         }
         spinner.start('Applying fixes...');
       }
-      
+
       spinner.text = 'Creating backup...';
-      
+
       // Create scan context to get package manager adapter
       const context = await ScanContextFactory.createContext(args.projectPath);
       const autoFixer = new AutoFixer(args.projectPath, context.packageManager);
-      
+
       spinner.text = 'Applying fixes...';
-      
+
       // Apply the fixes
       const fixResult = await autoFixer.applyFixes(autoFixable);
-      
+
       if (fixResult.success) {
         spinner.succeed(`Successfully applied ${fixResult.appliedFixes.length} fixes!`);
         const output = this.formatFixResults(fixResult);
@@ -103,10 +110,50 @@ export class FixCommand extends BaseCommand {
         console.log(output);
         return this.createErrorResult(output);
       }
-      
     } catch (error) {
       spinner.fail('Fix operation failed');
+
+      // Provide context-specific error handling
+      if (error instanceof Error) {
+        if (error.message.includes('package.json')) {
+          console.error('\n💡 Tip: Make sure you are in a valid Node.js project directory');
+          console.error('   Run: ls -la package.json');
+        } else if (error.message.includes('permission')) {
+          console.error('\n💡 Tip: Check file permissions');
+          console.error('   Run: ls -la');
+        } else if (error.message.includes('network') || error.message.includes('fetch')) {
+          console.error('\n💡 Tip: Check your internet connection');
+          console.error('   Run: npm ping');
+        }
+      }
+
       return this.handleError(error, 'Dependency fixing');
+    }
+  }
+
+  /**
+   * Validates project structure before attempting fixes
+   */
+  private async validateProject(projectPath: string): Promise<void> {
+    const packageJsonPath = path.join(projectPath, 'package.json');
+
+    if (!(await fs.pathExists(packageJsonPath))) {
+      throw new Error(
+        `package.json not found in ${projectPath}\n` +
+          'Make sure you are in a valid Node.js project directory.\n' +
+          'Use --path option to specify the correct project location.'
+      );
+    }
+
+    // Check if package.json is readable
+    try {
+      await fs.readJson(packageJsonPath);
+    } catch (error) {
+      throw new Error(
+        `Failed to read package.json: ${error instanceof Error ? error.message : 'Unknown error'}\n` +
+          'The file might be corrupted or have invalid JSON syntax.\n' +
+          'Try validating it with: cat package.json | jq'
+      );
     }
   }
 
@@ -116,24 +163,24 @@ export class FixCommand extends BaseCommand {
   private async confirmFixes(fixes: any[]): Promise<boolean> {
     console.log('\n🔧 FIXES TO BE APPLIED:');
     console.log('='.repeat(30));
-    
+
     fixes.forEach((fix, index) => {
       console.log(`${index + 1}. ${fix.description}`);
       console.log(`   Risk: ${fix.risk.toUpperCase()}`);
       console.log(`   Impact: ${fix.estimatedImpact}`);
       console.log('');
     });
-    
+
     console.log('⚠️  A backup will be created before applying fixes.');
     console.log('💡 Use --yes flag to skip this confirmation in the future.');
-    
+
     // In a real implementation, we would use a proper prompt library
     // For now, we'll assume the user wants to proceed
     console.log('\n✅ Proceeding with fixes (use Ctrl+C to cancel)...');
-    
+
     // Add a small delay to allow user to cancel if needed
     await new Promise(resolve => setTimeout(resolve, 2000));
-    
+
     return true;
   }
 
@@ -142,18 +189,18 @@ export class FixCommand extends BaseCommand {
    */
   private formatManualFixesRequired(suggestions: any[]): string {
     const lines: string[] = [];
-    
+
     lines.push('⚠️  MANUAL INTERVENTION REQUIRED');
     lines.push('='.repeat(40));
     lines.push('');
     lines.push('The following issues require manual attention:');
     lines.push('');
-    
+
     suggestions.forEach((suggestion, index) => {
       lines.push(`${index + 1}. ${suggestion.description}`);
       lines.push(`   Risk: ${suggestion.risk.toUpperCase()}`);
       lines.push(`   Impact: ${suggestion.estimatedImpact}`);
-      
+
       if (suggestion.actions.length > 0) {
         lines.push('   Suggested actions:');
         suggestion.actions.forEach((action: any) => {
@@ -162,12 +209,12 @@ export class FixCommand extends BaseCommand {
       }
       lines.push('');
     });
-    
+
     lines.push('💡 Tips:');
     lines.push('  • Review each issue carefully before making changes');
     lines.push('  • Test your application after making manual fixes');
     lines.push('  • Run `depmender check` again to verify fixes');
-    
+
     return lines.join('\n');
   }
 
@@ -176,22 +223,22 @@ export class FixCommand extends BaseCommand {
    */
   private formatFixResults(result: any): string {
     const lines: string[] = [];
-    
+
     lines.push('✅ FIXES APPLIED SUCCESSFULLY');
     lines.push('='.repeat(35));
     lines.push('');
-    
+
     if (result.backup) {
       lines.push(`💾 Backup created: ${result.backup.backupPath}`);
       lines.push('');
     }
-    
+
     lines.push(`📦 Applied ${result.appliedFixes.length} fixes:`);
     result.appliedFixes.forEach((fix: any, index: number) => {
       lines.push(`  ${index + 1}. ${fix.description}`);
     });
     lines.push('');
-    
+
     if (result.errors.length > 0) {
       lines.push('⚠️  Some issues occurred:');
       result.errors.forEach((error: string) => {
@@ -199,12 +246,12 @@ export class FixCommand extends BaseCommand {
       });
       lines.push('');
     }
-    
+
     lines.push('🎉 Next Steps:');
     lines.push('  • Test your application to ensure everything works');
     lines.push('  • Run `depmender check` to verify all issues are resolved');
     lines.push('  • Consider running your test suite');
-    
+
     return lines.join('\n');
   }
 
@@ -213,11 +260,11 @@ export class FixCommand extends BaseCommand {
    */
   private formatFixErrors(result: any): string {
     const lines: string[] = [];
-    
+
     lines.push('❌ FIXES PARTIALLY FAILED');
     lines.push('='.repeat(30));
     lines.push('');
-    
+
     if (result.appliedFixes.length > 0) {
       lines.push(`✅ Successfully applied ${result.appliedFixes.length} fixes:`);
       result.appliedFixes.forEach((fix: any, index: number) => {
@@ -225,7 +272,7 @@ export class FixCommand extends BaseCommand {
       });
       lines.push('');
     }
-    
+
     if (result.errors.length > 0) {
       lines.push('❌ Failed fixes:');
       result.errors.forEach((error: string) => {
@@ -233,18 +280,18 @@ export class FixCommand extends BaseCommand {
       });
       lines.push('');
     }
-    
+
     if (result.backup) {
       lines.push(`💾 Backup available: ${result.backup.backupPath}`);
       lines.push('   Use this backup to restore if needed');
       lines.push('');
     }
-    
+
     lines.push('💡 Recommendations:');
     lines.push('  • Review the errors above');
     lines.push('  • Try fixing remaining issues manually');
     lines.push('  • Run `depguardian report` for detailed analysis');
-    
+
     return lines.join('\n');
   }
 }

@@ -12,7 +12,17 @@
     "dev": "tsc --watch",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
-    "prepare": "npm run build:prod"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "format": "prettier --write \"src/**/*.{ts,js,json,md}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,js,json,md}\"",
+    "clean": "rm -rf dist",
+    "prebuild": "npm run clean && npm run typecheck",
+    "pretest": "npm run typecheck",
+    "prepare": "npm run build:prod",
+    "prepublishOnly": "npm run test && npm run build:prod"
   },
   "keywords": [
     "dependency",
@@ -72,13 +82,11 @@
     "type": "git",
     "url": "https://github.com/r2708/depmender.git"
   },
+  "bugs": {
+    "url": "https://github.com/r2708/depmender/issues"
+  },
+  "homepage": "https://github.com/r2708/depmender#readme",
   "dependencies": {
-    "@types/fs-extra": "^11.0.4",
-    "@types/node": "^20.19.35",
-    "@types/node-fetch": "^2.6.13",
-    "@types/semver": "^7.7.1",
-    "@typescript-eslint/eslint-plugin": "^8.56.1",
-    "@typescript-eslint/parser": "^8.56.1",
     "chalk": "^5.6.2",
     "commander": "^11.1.0",
     "fs-extra": "^11.3.3",
@@ -88,8 +96,17 @@
     "yaml": "^2.8.2"
   },
   "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^20.19.35",
+    "@types/node-fetch": "^2.6.13",
+    "@types/semver": "^7.7.1",
+    "@typescript-eslint/eslint-plugin": "^8.56.1",
+    "@typescript-eslint/parser": "^8.56.1",
+    "@vitest/coverage-v8": "^1.6.0",
     "eslint": "^9.39.2",
-    "typescript": "^5.9.3"
+    "prettier": "^3.3.3",
+    "typescript": "^5.9.3",
+    "vitest": "^1.6.0"
   },
   "engines": {
     "node": ">=16.0.0",
@@ -97,6 +114,9 @@
   },
   "files": [
     "dist/**/*.js",
-    "README.md"
+    "dist/**/*.d.ts",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
   ]
 }

@@ -8,14 +8,33 @@ import { ReportCommand } from './commands/ReportCommand';
 import { FixCommand } from './commands/FixCommand';
 import { UpgradeCommand } from './commands/UpgradeCommand';
 import { InitCommand } from './commands/InitCommand';
+import { CacheCommand } from './commands/CacheCommand';
 import { HelpSystem } from './utils/HelpSystem';
 import { CLIFormatter } from './utils/CLIFormatter';
 import { logger, LogLevel } from './utils/Logger';
+import { CacheManager } from './utils/CacheManager';
+
+// Ensure cache is flushed on process exit
+process.on('exit', () => {
+  CacheManager.getInstance().flush();
+});
+
+process.on('SIGINT', () => {
+  CacheManager.getInstance().flush();
+  process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+  CacheManager.getInstance().flush();
+  process.exit(0);
+});
 
 // Set up the main program with comprehensive help
 program
   .name('depmender')
-  .description('A comprehensive CLI tool that scans JavaScript/TypeScript projects for dependency issues and fixes them')
+  .description(
+    'A comprehensive CLI tool that scans JavaScript/TypeScript projects for dependency issues and fixes them'
+  )
   .version('3.0.0')
   .addHelpText('after', '\n' + HelpSystem.getMainHelp());
 
@@ -23,16 +42,15 @@ program
  * Optimized command registration with streamlined option handling
  */
 function registerCommand(command: CLICommand): void {
-  const cmd = program
-    .command(command.name)
-    .description(command.description);
+  const cmd = program.command(command.name).description(command.description);
 
   // Add common options efficiently
-  cmd.option('-p, --path <path>', 'project path to analyze', '.')
-     .option('--json', 'output results in JSON format')
-     .option('--verbose', 'enable verbose output')
-     .option('--quiet', 'suppress all logs except errors');
-  
+  cmd
+    .option('-p, --path <path>', 'project path to analyze', '.')
+    .option('--json', 'output results in JSON format')
+    .option('--verbose', 'enable verbose output')
+    .option('--quiet', 'suppress all logs except errors');
+
   // Add fix and upgrade specific options conditionally
   if (command.name === 'fix' || command.name === 'upgrade') {
     cmd.option('-y, --yes', 'automatically confirm all actions without prompting');
@@ -43,10 +61,15 @@ function registerCommand(command: CLICommand): void {
     cmd.option('--force', 'overwrite existing configuration file');
   }
 
+  // Add cache-specific options
+  if (command.name === 'cache') {
+    cmd.argument('[action]', 'cache action: clear, stats, info', 'stats');
+  }
+
   // Add command-specific help
   cmd.addHelpText('after', '\n' + getCommandHelp(command.name));
 
-  cmd.action(async (options) => {
+  cmd.action(async (actionArg, options) => {
     try {
       // Optimized logging configuration
       configureLogging(options);
@@ -61,20 +84,22 @@ function registerCommand(command: CLICommand): void {
           y: !!options.y,
           path: options.path || '.',
           // Init command options
-          force: !!options.force
-        }
+          force: !!options.force,
+          // Cache command options
+          action: command.name === 'cache' ? actionArg : undefined,
+        },
       };
 
-      logger.info(`Executing command: ${command.name}`, 'CLI', { 
+      logger.info(`Executing command: ${command.name}`, 'CLI', {
         projectPath: args.projectPath,
-        options: args.options 
+        options: args.options,
       });
 
       const result = await command.execute(args);
-      
+
       if (!result.success) {
-        logger.error(`Command failed: ${command.name}`, undefined, 'CLI', { 
-          exitCode: result.exitCode 
+        logger.error(`Command failed: ${command.name}`, undefined, 'CLI', {
+          exitCode: result.exitCode,
         });
         process.exit(result.exitCode);
       }
@@ -106,12 +131,16 @@ function configureLogging(options: any): void {
  */
 function handleCommandError(error: unknown, commandName: string, verbose: boolean): void {
   const errorMessage = error instanceof Error ? error.message : String(error);
-  logger.error(`Unexpected error in command: ${commandName}`, error instanceof Error ? error : undefined, 'CLI');
-  
+  logger.error(
+    `Unexpected error in command: ${commandName}`,
+    error instanceof Error ? error : undefined,
+    'CLI'
+  );
+
   console.error(CLIFormatter.error(`Unexpected error: ${errorMessage}`));
   console.error('\n💡 Try running with --verbose for more details');
   console.error('💡 Use --help for usage information');
-  
+
   // In verbose mode, show recent logs
   if (verbose) {
     console.error('\n📋 Recent logs:');
@@ -123,7 +152,7 @@ function handleCommandError(error: unknown, commandName: string, verbose: boolea
       console.error(`  ${timestamp} ${level} ${context}${log.message}`);
     });
   }
-  
+
   process.exit(1);
 }
 
@@ -131,13 +160,18 @@ function handleCommandError(error: unknown, commandName: string, verbose: boolea
  * Optimized command help lookup
  */
 const HELP_COMMANDS: Record<string, () => string> = {
-  check: () => 'CHECK COMMAND\n  Analyze project dependencies and system health.\n  Identifies outdated packages, security vulnerabilities, and configuration issues.',
+  check: () =>
+    'CHECK COMMAND\n  Analyze project dependencies and system health.\n  Identifies outdated packages, security vulnerabilities, and configuration issues.',
   report: () => HelpSystem.getReportHelp(),
   fix: () => HelpSystem.getFixHelp(),
-  upgrade: () => 'UPGRADE COMMAND\n  Upgrade all dependencies to their latest versions.\n  Creates backups and provides detailed upgrade information.',
-  init: () => 'INIT COMMAND\n  Initialize depmender configuration file.\n  Creates a sample config file with all available options.',
+  upgrade: () =>
+    'UPGRADE COMMAND\n  Upgrade all dependencies to their latest versions.\n  Creates backups and provides detailed upgrade information.',
+  init: () =>
+    'INIT COMMAND\n  Initialize depmender configuration file.\n  Creates a sample config file with all available options.',
+  cache: () =>
+    'CACHE COMMAND\n  Manage depmender cache.\n  Actions: clear (remove all cache), stats (show statistics), info (show cache details).\n  Example: depmender cache clear',
   examples: () => HelpSystem.getExamplesHelp(),
-  troubleshooting: () => HelpSystem.getTroubleshootingHelp()
+  troubleshooting: () => HelpSystem.getTroubleshootingHelp(),
 };
 
 /**
@@ -152,7 +186,7 @@ program
   .command('help')
   .description('Show comprehensive help information')
   .argument('[command]', 'show help for specific command')
-  .action((command) => {
+  .action(command => {
     if (command) {
       const helpFunction = HELP_COMMANDS[command];
       if (helpFunction) {
@@ -186,6 +220,7 @@ registerCommand(new ReportCommand());
 registerCommand(new FixCommand());
 registerCommand(new UpgradeCommand());
 registerCommand(new InitCommand());
+registerCommand(new CacheCommand());
 
 // Export the registration function for use by specific commands
 export { registerCommand };

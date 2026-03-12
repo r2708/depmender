@@ -5,7 +5,6 @@ import chalk from 'chalk';
  * Requirement 6.4: Clean, formatted output with clear summaries
  */
 export class CLIFormatter {
-  
   /**
    * Creates a formatted header with title and separator
    */
@@ -63,7 +62,7 @@ export class CLIFormatter {
   static healthScore(score: number): string {
     let color = chalk.red;
     let indicator = '💀 Critical';
-    
+
     if (score >= 90) {
       color = chalk.green;
       indicator = '🟢 Excellent';
@@ -77,7 +76,7 @@ export class CLIFormatter {
       color = chalk.red;
       indicator = '🔴 Poor';
     }
-    
+
     return color.bold(`${score}/100 ${indicator}`);
   }
 
@@ -122,7 +121,7 @@ export class CLIFormatter {
     const percentage = Math.round((current / total) * 100);
     const filled = Math.round((current / total) * width);
     const empty = width - filled;
-    
+
     const bar = chalk.green('█'.repeat(filled)) + chalk.gray('░'.repeat(empty));
     return `${bar} ${percentage}%`;
   }
@@ -147,14 +146,14 @@ export class CLIFormatter {
   static box(content: string, padding: number = 1): string {
     const lines = content.split('\n');
     const maxLength = Math.max(...lines.map(line => line.length));
-    const width = maxLength + (padding * 2);
-    
+    const width = maxLength + padding * 2;
+
     const top = '┌' + '─'.repeat(width) + '┐';
     const bottom = '└' + '─'.repeat(width) + '┘';
-    const paddedLines = lines.map(line => 
-      '│' + ' '.repeat(padding) + line.padEnd(maxLength) + ' '.repeat(padding) + '│'
+    const paddedLines = lines.map(
+      line => '│' + ' '.repeat(padding) + line.padEnd(maxLength) + ' '.repeat(padding) + '│'
     );
-    
+
     return [top, ...paddedLines, bottom].join('\n');
   }
 
@@ -163,16 +162,16 @@ export class CLIFormatter {
    */
   static helpText(sections: { title: string; content: string[] }[]): string {
     const output: string[] = [];
-    
+
     sections.forEach((section, index) => {
       if (index > 0) output.push(''); // Add spacing between sections
-      
+
       output.push(chalk.bold.cyan(section.title));
       section.content.forEach(line => {
         output.push(`  ${line}`);
       });
     });
-    
+
     return output.join('\n');
   }
 
@@ -195,11 +194,7 @@ export class CLIFormatter {
 
     const separator = '  ' + columnWidths.map(width => '-'.repeat(width)).join('  ');
 
-    const output = [
-      formatRow(headers, true),
-      separator,
-      ...rows.map(row => formatRow(row))
-    ];
+    const output = [formatRow(headers, true), separator, ...rows.map(row => formatRow(row))];
 
     return output.join('\n');
   }

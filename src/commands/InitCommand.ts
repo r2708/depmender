@@ -16,18 +16,17 @@ export class InitCommand extends BaseCommand {
 
   async execute(args: CommandArgs): Promise<CommandResult> {
     this.logger.info('Starting init command execution');
-    
+
     try {
       console.log(CLIFormatter.header('🚀 INITIALIZING DEPMENDER'));
       console.log('');
 
       const configPath = await this.createConfiguration(args.projectPath, args.options);
       const output = this.formatInitResults(configPath);
-      
+
       console.log(output);
-      
+
       return this.createSuccessResult(output);
-      
     } catch (error) {
       this.logger.error('Init command failed', error instanceof Error ? error : undefined);
       return this.handleError(error, 'Configuration initialization');
@@ -40,14 +39,16 @@ export class InitCommand extends BaseCommand {
   private async createConfiguration(projectPath: string, options: any): Promise<string> {
     // Check if config already exists
     const existingConfig = await this.findExistingConfig(projectPath);
-    
+
     if (existingConfig && !options.force) {
-      throw new Error(`Configuration file already exists: ${existingConfig}\nUse --force to overwrite`);
+      throw new Error(
+        `Configuration file already exists: ${existingConfig}\nUse --force to overwrite`
+      );
     }
 
     // Create sample configuration
     const configPath = await ConfigManager.createSampleConfig(projectPath);
-    
+
     return configPath;
   }
 
@@ -60,7 +61,7 @@ export class InitCommand extends BaseCommand {
       'depmender.config.json',
       '.depmenderrc',
       '.depmenderrc.json',
-      '.depmenderrc.js'
+      '.depmenderrc.js',
     ];
 
     // Check in depmender-files folder first
@@ -88,7 +89,7 @@ export class InitCommand extends BaseCommand {
    */
   private formatInitResults(configPath: string): string {
     const lines: string[] = [];
-    
+
     lines.push('✅ Configuration file created successfully!');
     lines.push('');
     lines.push(`📄 Config file: depmender-files/${path.basename(configPath)}`);

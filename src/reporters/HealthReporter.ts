@@ -10,14 +10,13 @@ import {
   SecurityIssue,
   IssueType,
   IssueSeverity,
-  SecuritySeverity
+  SecuritySeverity,
 } from '../core/types';
 
 /**
  * Health reporter that generates comprehensive dependency health reports
  */
 export class HealthReporter implements IHealthReporter {
-  
   /**
    * Generates a comprehensive health report from analysis results
    */
@@ -34,7 +33,7 @@ export class HealthReporter implements IHealthReporter {
       securityIssues: analysis.securityVulnerabilities,
       peerConflicts,
       recommendations,
-      projectInfo: analysis.projectInfo
+      projectInfo: analysis.projectInfo,
     };
   }
 
@@ -43,7 +42,7 @@ export class HealthReporter implements IHealthReporter {
    */
   formatForCLI(report: HealthReport): string {
     const lines: string[] = [];
-    
+
     // Header
     lines.push('='.repeat(60));
     lines.push('📊 DEPENDENCY HEALTH REPORT');
@@ -74,12 +73,12 @@ export class HealthReporter implements IHealthReporter {
     if (report.summary.criticalIssues > 0) {
       lines.push('🚨 CRITICAL ISSUES - IMMEDIATE ATTENTION REQUIRED');
       lines.push('-'.repeat(50));
-      
+
       // Show critical security issues first
       const criticalSecurity = report.securityIssues.filter(
         issue => issue.severity === SecuritySeverity.CRITICAL
       );
-      
+
       if (criticalSecurity.length > 0) {
         lines.push('🔒 Critical Security Vulnerabilities:');
         for (const issue of criticalSecurity) {
@@ -92,7 +91,7 @@ export class HealthReporter implements IHealthReporter {
         }
         lines.push('');
       }
-      
+
       // Show other critical issues
       const otherCritical = this.getCriticalNonSecurityIssues(report);
       if (otherCritical.length > 0) {
@@ -108,14 +107,14 @@ export class HealthReporter implements IHealthReporter {
     if (report.securityIssues.length > 0) {
       lines.push('🔒 SECURITY VULNERABILITIES');
       lines.push('-'.repeat(30));
-      
+
       const groupedBySeverity = this.groupSecurityBySeverity(report.securityIssues);
-      
+
       for (const [severity, issues] of Object.entries(groupedBySeverity)) {
         if (issues.length > 0) {
           const severityIcon = this.getSecuritySeverityIcon(severity as SecuritySeverity);
           lines.push(`${severityIcon} ${severity.toUpperCase()} (${issues.length})`);
-          
+
           for (const issue of issues) {
             lines.push(`  📦 ${issue.packageName}@${issue.version}`);
             lines.push(`     ${issue.vulnerability.title}`);
@@ -137,7 +136,7 @@ export class HealthReporter implements IHealthReporter {
     if (report.outdatedPackages.length > 0) {
       lines.push('📦 OUTDATED PACKAGES');
       lines.push('-'.repeat(25));
-      
+
       for (const pkg of report.outdatedPackages) {
         const typeIcon = this.getPackageTypeIcon(pkg.type);
         lines.push(`${typeIcon} ${pkg.name}`);
@@ -151,7 +150,7 @@ export class HealthReporter implements IHealthReporter {
     if (report.peerConflicts.length > 0) {
       lines.push('🔗 PEER DEPENDENCY CONFLICTS');
       lines.push('-'.repeat(35));
-      
+
       for (const conflict of report.peerConflicts) {
         lines.push(`⚠️  ${conflict.packageName}`);
         lines.push(`   Required by: ${conflict.requiredBy.join(', ')}`);
@@ -167,15 +166,15 @@ export class HealthReporter implements IHealthReporter {
     if (report.recommendations.length > 0) {
       lines.push('💡 RECOMMENDATIONS');
       lines.push('-'.repeat(25));
-      
+
       const groupedByPriority = this.groupRecommendationsByPriority(report.recommendations);
-      
+
       for (const priority of ['critical', 'high', 'medium', 'low']) {
         const recs = groupedByPriority[priority];
         if (recs && recs.length > 0) {
           const priorityIcon = this.getPriorityIcon(priority);
           lines.push(`${priorityIcon} ${priority.toUpperCase()} PRIORITY`);
-          
+
           for (const rec of recs) {
             lines.push(`  • ${rec.description}`);
             if (rec.commands && rec.commands.length > 0) {
@@ -206,14 +205,17 @@ export class HealthReporter implements IHealthReporter {
    * Generates report summary from analysis results
    */
   private generateSummary(analysis: AnalysisResult): ReportSummary {
-    const criticalIssues = this.countCriticalIssues(analysis.issues, analysis.securityVulnerabilities);
-    
+    const criticalIssues = this.countCriticalIssues(
+      analysis.issues,
+      analysis.securityVulnerabilities
+    );
+
     return {
       totalPackages: this.estimateTotalPackages(analysis),
       issuesFound: analysis.issues.length,
       criticalIssues,
       securityVulnerabilities: analysis.securityVulnerabilities.length,
-      healthScore: analysis.healthScore
+      healthScore: analysis.healthScore,
     };
   }
 
@@ -227,7 +229,7 @@ export class HealthReporter implements IHealthReporter {
         name: issue.packageName,
         currentVersion: issue.currentVersion || 'unknown',
         latestVersion: issue.latestVersion!,
-        type: 'dependency' as const // Default type, could be enhanced with more context
+        type: 'dependency' as const, // Default type, could be enhanced with more context
       }));
   }
 
@@ -250,7 +252,7 @@ export class HealthReporter implements IHealthReporter {
           packageName: issue.packageName,
           requiredBy: ['unknown'], // Could be enhanced with more context
           conflictingVersions: issue.currentVersion ? [issue.currentVersion] : [],
-          suggestedResolution: this.generatePeerConflictSuggestion(issue)
+          suggestedResolution: this.generatePeerConflictSuggestion(issue),
         });
       }
     }
@@ -268,7 +270,7 @@ export class HealthReporter implements IHealthReporter {
     const criticalSecurity = analysis.securityVulnerabilities.filter(
       issue => issue.severity === SecuritySeverity.CRITICAL
     );
-    
+
     if (criticalSecurity.length > 0) {
       recommendations.push({
         type: 'update',
@@ -276,7 +278,7 @@ export class HealthReporter implements IHealthReporter {
         priority: 'critical',
         commands: criticalSecurity
           .filter(issue => issue.fixedIn)
-          .map(issue => `npm update ${issue.packageName}@${issue.fixedIn}`)
+          .map(issue => `npm update ${issue.packageName}@${issue.fixedIn}`),
       });
     }
 
@@ -284,7 +286,7 @@ export class HealthReporter implements IHealthReporter {
     const highSecurity = analysis.securityVulnerabilities.filter(
       issue => issue.severity === SecuritySeverity.HIGH
     );
-    
+
     if (highSecurity.length > 0) {
       recommendations.push({
         type: 'update',
@@ -292,7 +294,7 @@ export class HealthReporter implements IHealthReporter {
         priority: 'high',
         commands: highSecurity
           .filter(issue => issue.fixedIn)
-          .map(issue => `npm update ${issue.packageName}@${issue.fixedIn}`)
+          .map(issue => `npm update ${issue.packageName}@${issue.fixedIn}`),
       });
     }
 
@@ -303,25 +305,27 @@ export class HealthReporter implements IHealthReporter {
         type: 'install',
         description: `Install ${missingPackages.length} missing packages`,
         priority: 'high',
-        commands: [`${this.getPackageManagerCommand(analysis.packageManager)} install`]
+        commands: [`${this.getPackageManagerCommand(analysis.packageManager)} install`],
       });
     }
 
     // Outdated packages recommendations
     const outdatedPackages = analysis.issues.filter(issue => issue.type === IssueType.OUTDATED);
     if (outdatedPackages.length > 0) {
-      const criticalOutdated = outdatedPackages.filter(issue => issue.severity === IssueSeverity.CRITICAL);
+      const criticalOutdated = outdatedPackages.filter(
+        issue => issue.severity === IssueSeverity.CRITICAL
+      );
       if (criticalOutdated.length > 0) {
         recommendations.push({
           type: 'update',
           description: `Update ${criticalOutdated.length} critically outdated packages`,
-          priority: 'high'
+          priority: 'high',
         });
       } else {
         recommendations.push({
           type: 'update',
           description: `Consider updating ${outdatedPackages.length} outdated packages`,
-          priority: 'medium'
+          priority: 'medium',
         });
       }
     }
@@ -332,7 +336,7 @@ export class HealthReporter implements IHealthReporter {
       recommendations.push({
         type: 'resolve-conflict',
         description: `Resolve ${peerConflicts.length} peer dependency conflicts`,
-        priority: 'medium'
+        priority: 'medium',
       });
     }
 
@@ -343,9 +347,13 @@ export class HealthReporter implements IHealthReporter {
    * Counts critical issues across all categories
    */
   private countCriticalIssues(issues: DependencyIssue[], securityIssues: SecurityIssue[]): number {
-    const criticalDependencyIssues = issues.filter(issue => issue.severity === IssueSeverity.CRITICAL).length;
-    const criticalSecurityIssues = securityIssues.filter(issue => issue.severity === SecuritySeverity.CRITICAL).length;
-    
+    const criticalDependencyIssues = issues.filter(
+      issue => issue.severity === IssueSeverity.CRITICAL
+    ).length;
+    const criticalSecurityIssues = securityIssues.filter(
+      issue => issue.severity === SecuritySeverity.CRITICAL
+    ).length;
+
     return criticalDependencyIssues + criticalSecurityIssues;
   }
 
@@ -373,11 +381,16 @@ export class HealthReporter implements IHealthReporter {
    */
   private getSecuritySeverityIcon(severity: SecuritySeverity): string {
     switch (severity) {
-      case SecuritySeverity.CRITICAL: return '🚨';
-      case SecuritySeverity.HIGH: return '⚠️';
-      case SecuritySeverity.MODERATE: return '⚡';
-      case SecuritySeverity.LOW: return '💡';
-      default: return '❓';
+      case SecuritySeverity.CRITICAL:
+        return '🚨';
+      case SecuritySeverity.HIGH:
+        return '⚠️';
+      case SecuritySeverity.MODERATE:
+        return '⚡';
+      case SecuritySeverity.LOW:
+        return '💡';
+      default:
+        return '❓';
     }
   }
 
@@ -386,11 +399,16 @@ export class HealthReporter implements IHealthReporter {
    */
   private getPackageTypeIcon(type: string): string {
     switch (type) {
-      case 'dependency': return '📦';
-      case 'devDependency': return '🔧';
-      case 'peerDependency': return '🔗';
-      case 'optionalDependency': return '📋';
-      default: return '📦';
+      case 'dependency':
+        return '📦';
+      case 'devDependency':
+        return '🔧';
+      case 'peerDependency':
+        return '🔗';
+      case 'optionalDependency':
+        return '📋';
+      default:
+        return '📦';
     }
   }
 
@@ -399,11 +417,16 @@ export class HealthReporter implements IHealthReporter {
    */
   private getPriorityIcon(priority: string): string {
     switch (priority) {
-      case 'critical': return '🚨';
-      case 'high': return '⚠️';
-      case 'medium': return '💡';
-      case 'low': return '📝';
-      default: return '❓';
+      case 'critical':
+        return '🚨';
+      case 'high':
+        return '⚠️';
+      case 'medium':
+        return '💡';
+      case 'low':
+        return '📝';
+      default:
+        return '❓';
     }
   }
 
@@ -415,7 +438,7 @@ export class HealthReporter implements IHealthReporter {
       [SecuritySeverity.CRITICAL]: [],
       [SecuritySeverity.HIGH]: [],
       [SecuritySeverity.MODERATE]: [],
-      [SecuritySeverity.LOW]: []
+      [SecuritySeverity.LOW]: [],
     };
 
     for (const issue of issues) {
@@ -428,12 +451,14 @@ export class HealthReporter implements IHealthReporter {
   /**
    * Groups recommendations by priority
    */
-  private groupRecommendationsByPriority(recommendations: Recommendation[]): Record<string, Recommendation[]> {
+  private groupRecommendationsByPriority(
+    recommendations: Recommendation[]
+  ): Record<string, Recommendation[]> {
     const grouped: Record<string, Recommendation[]> = {
       critical: [],
       high: [],
       medium: [],
-      low: []
+      low: [],
     };
 
     for (const rec of recommendations) {
@@ -464,9 +489,12 @@ export class HealthReporter implements IHealthReporter {
    */
   private getPackageManagerCommand(packageManager: string): string {
     switch (packageManager) {
-      case 'yarn': return 'yarn';
-      case 'pnpm': return 'pnpm';
-      default: return 'npm';
+      case 'yarn':
+        return 'yarn';
+      case 'pnpm':
+        return 'pnpm';
+      default:
+        return 'npm';
     }
   }
 }

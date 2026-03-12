@@ -1,13 +1,13 @@
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import { BaseDependencyScanner } from './BaseDependencyScanner';
-import { 
-  ScanContext, 
-  ScanResult, 
-  ScannerType, 
-  DependencyIssue, 
-  IssueType, 
-  IssueSeverity 
+import {
+  ScanContext,
+  ScanResult,
+  ScannerType,
+  DependencyIssue,
+  IssueType,
+  IssueSeverity,
 } from '../core/types';
 
 /**
@@ -15,22 +15,21 @@ import {
  * Checks for missing files and corrupted package structures
  */
 export class BrokenScanner extends BaseDependencyScanner {
-
   getScannerType(): ScannerType {
     return ScannerType.BROKEN;
   }
 
   async scan(context: ScanContext): Promise<ScanResult> {
     this.validateContext(context);
-    
+
     const result = this.createBaseScanResult();
-    
+
     // Check all installed packages for corruption
     for (const installedPackage of context.nodeModules.packages) {
       const issues = await this.checkPackageIntegrity(installedPackage, context);
       result.issues.push(...issues);
     }
-    
+
     return result;
   }
 
@@ -42,22 +41,24 @@ export class BrokenScanner extends BaseDependencyScanner {
     context: ScanContext
   ): Promise<DependencyIssue[]> {
     const issues: DependencyIssue[] = [];
-    
+
     // Skip invalid package names
     if (!this.isValidPackageName(installedPackage.name)) {
       return issues;
     }
-    
+
     try {
       // Check if package directory exists
       const packageExists = await this.checkPackageDirectoryExists(installedPackage);
       if (!packageExists) {
-        issues.push(this.createBrokenIssue(
-          installedPackage.name,
-          installedPackage.version,
-          BrokenType.MISSING_DIRECTORY,
-          'Package directory is missing from node_modules'
-        ));
+        issues.push(
+          this.createBrokenIssue(
+            installedPackage.name,
+            installedPackage.version,
+            BrokenType.MISSING_DIRECTORY,
+            'Package directory is missing from node_modules'
+          )
+        );
         return issues; // No point checking further if directory doesn't exist
       }
 
@@ -86,15 +87,16 @@ export class BrokenScanner extends BaseDependencyScanner {
       // Check file permissions (if applicable)
       const permissionIssues = await this.checkFilePermissions(installedPackage);
       issues.push(...permissionIssues);
-
     } catch (error) {
       // If we can't check the package at all, it's definitely broken
-      issues.push(this.createBrokenIssue(
-        installedPackage.name,
-        installedPackage.version,
-        BrokenType.ACCESS_ERROR,
-        `Cannot access package: ${error}`
-      ));
+      issues.push(
+        this.createBrokenIssue(
+          installedPackage.name,
+          installedPackage.version,
+          BrokenType.ACCESS_ERROR,
+          `Cannot access package: ${error}`
+        )
+      );
     }
 
     return issues;
@@ -117,10 +119,10 @@ export class BrokenScanner extends BaseDependencyScanner {
    */
   private async checkPackageJsonIntegrity(installedPackage: any): Promise<DependencyIssue | null> {
     const packageJsonPath = path.join(installedPackage.path, 'package.json');
-    
+
     try {
       // Check if package.json exists
-      if (!await fs.pathExists(packageJsonPath)) {
+      if (!(await fs.pathExists(packageJsonPath))) {
         return this.createBrokenIssue(
           installedPackage.name,
           installedPackage.version,
@@ -163,7 +165,6 @@ export class BrokenScanner extends BaseDependencyScanner {
       }
 
       return null; // Package.json is valid
-
     } catch (error) {
       if (error instanceof SyntaxError) {
         return this.createBrokenIssue(
@@ -189,8 +190,8 @@ export class BrokenScanner extends BaseDependencyScanner {
   private async checkEntryPointIntegrity(installedPackage: any): Promise<DependencyIssue | null> {
     try {
       const packageJsonPath = path.join(installedPackage.path, 'package.json');
-      
-      if (!await fs.pathExists(packageJsonPath)) {
+
+      if (!(await fs.pathExists(packageJsonPath))) {
         return null; // Already handled by package.json check
       }
 
@@ -199,7 +200,7 @@ export class BrokenScanner extends BaseDependencyScanner {
       const entryPointPath = path.join(installedPackage.path, mainEntry);
 
       // Check if main entry point exists
-      if (!await fs.pathExists(entryPointPath)) {
+      if (!(await fs.pathExists(entryPointPath))) {
         return this.createBrokenIssue(
           installedPackage.name,
           installedPackage.version,
@@ -220,7 +221,6 @@ export class BrokenScanner extends BaseDependencyScanner {
       }
 
       return null; // Entry point is valid
-
     } catch (error) {
       return this.createBrokenIssue(
         installedPackage.name,
@@ -236,7 +236,7 @@ export class BrokenScanner extends BaseDependencyScanner {
    */
   private async checkEssentialFiles(installedPackage: any): Promise<DependencyIssue[]> {
     const issues: DependencyIssue[] = [];
-    
+
     try {
       // Check for common essential files (these are warnings, not critical errors)
       const essentialFiles = ['README.md', 'README.txt', 'LICENSE', 'LICENSE.md', 'LICENSE.txt'];
@@ -257,26 +257,29 @@ export class BrokenScanner extends BaseDependencyScanner {
 
       // Missing README is a low-severity issue
       if (!hasReadme) {
-        issues.push(this.createBrokenIssue(
-          installedPackage.name,
-          installedPackage.version,
-          BrokenType.MISSING_DOCUMENTATION,
-          'Package is missing README file',
-          IssueSeverity.LOW
-        ));
+        issues.push(
+          this.createBrokenIssue(
+            installedPackage.name,
+            installedPackage.version,
+            BrokenType.MISSING_DOCUMENTATION,
+            'Package is missing README file',
+            IssueSeverity.LOW
+          )
+        );
       }
 
       // Missing LICENSE is a low-severity issue
       if (!hasLicense) {
-        issues.push(this.createBrokenIssue(
-          installedPackage.name,
-          installedPackage.version,
-          BrokenType.MISSING_LICENSE,
-          'Package is missing LICENSE file',
-          IssueSeverity.LOW
-        ));
+        issues.push(
+          this.createBrokenIssue(
+            installedPackage.name,
+            installedPackage.version,
+            BrokenType.MISSING_LICENSE,
+            'Package is missing LICENSE file',
+            IssueSeverity.LOW
+          )
+        );
       }
-
     } catch (error) {
       // Don't fail the entire scan for essential files check
       console.warn(`Error checking essential files for ${installedPackage.name}:`, error);
@@ -291,10 +294,10 @@ export class BrokenScanner extends BaseDependencyScanner {
   private async checkNestedNodeModules(installedPackage: any): Promise<DependencyIssue | null> {
     try {
       const nestedNodeModulesPath = path.join(installedPackage.path, 'node_modules');
-      
+
       if (await fs.pathExists(nestedNodeModulesPath)) {
         const stats = await fs.stat(nestedNodeModulesPath);
-        
+
         if (!stats.isDirectory()) {
           return this.createBrokenIssue(
             installedPackage.name,
@@ -318,7 +321,6 @@ export class BrokenScanner extends BaseDependencyScanner {
       }
 
       return null; // No issues with nested modules
-
     } catch (error) {
       return this.createBrokenIssue(
         installedPackage.name,
@@ -340,12 +342,14 @@ export class BrokenScanner extends BaseDependencyScanner {
       try {
         await fs.access(installedPackage.path, fs.constants.R_OK);
       } catch (error) {
-        issues.push(this.createBrokenIssue(
-          installedPackage.name,
-          installedPackage.version,
-          BrokenType.PERMISSION_ERROR,
-          'Package directory is not readable'
-        ));
+        issues.push(
+          this.createBrokenIssue(
+            installedPackage.name,
+            installedPackage.version,
+            BrokenType.PERMISSION_ERROR,
+            'Package directory is not readable'
+          )
+        );
       }
 
       // Check package.json permissions
@@ -354,15 +358,16 @@ export class BrokenScanner extends BaseDependencyScanner {
         try {
           await fs.access(packageJsonPath, fs.constants.R_OK);
         } catch (error) {
-          issues.push(this.createBrokenIssue(
-            installedPackage.name,
-            installedPackage.version,
-            BrokenType.PERMISSION_ERROR,
-            'package.json is not readable'
-          ));
+          issues.push(
+            this.createBrokenIssue(
+              installedPackage.name,
+              installedPackage.version,
+              BrokenType.PERMISSION_ERROR,
+              'package.json is not readable'
+            )
+          );
         }
       }
-
     } catch (error) {
       // Don't fail the entire scan for permission checks
       console.warn(`Error checking permissions for ${installedPackage.name}:`, error);
@@ -392,7 +397,7 @@ export class BrokenScanner extends BaseDependencyScanner {
       latestVersion: undefined,
       severity,
       description: fullDescription,
-      fixable: this.isBrokenTypeFixable(brokenType)
+      fixable: this.isBrokenTypeFixable(brokenType),
     };
   }
 
@@ -467,12 +472,12 @@ export class BrokenScanner extends BaseDependencyScanner {
       missingEntryPoints: 0,
       permissionErrors: 0,
       accessErrors: 0,
-      packages: []
+      packages: [],
     };
 
     for (const installedPackage of context.nodeModules.packages) {
       const issues = await this.checkPackageIntegrity(installedPackage, context);
-      
+
       if (issues.length > 0) {
         stats.total++;
         stats.packages.push({
@@ -481,8 +486,8 @@ export class BrokenScanner extends BaseDependencyScanner {
           issues: issues.map(issue => ({
             type: this.extractBrokenTypeFromDescription(issue.description),
             description: issue.description,
-            severity: issue.severity
-          }))
+            severity: issue.severity,
+          })),
         });
 
         // Count by type
@@ -528,7 +533,8 @@ export class BrokenScanner extends BaseDependencyScanner {
     if (description.includes('Invalid entry point')) return BrokenType.INVALID_ENTRY_POINT;
     if (description.includes('Missing documentation')) return BrokenType.MISSING_DOCUMENTATION;
     if (description.includes('Missing license')) return BrokenType.MISSING_LICENSE;
-    if (description.includes('Corrupted nested modules')) return BrokenType.CORRUPTED_NESTED_MODULES;
+    if (description.includes('Corrupted nested modules'))
+      return BrokenType.CORRUPTED_NESTED_MODULES;
     if (description.includes('Permission error')) return BrokenType.PERMISSION_ERROR;
     if (description.includes('Access error')) return BrokenType.ACCESS_ERROR;
     return BrokenType.ACCESS_ERROR; // Default
@@ -544,13 +550,13 @@ export class BrokenScanner extends BaseDependencyScanner {
 
     // Skip system directories and invalid names
     const invalidNames = [
-      '.bin',           // npm bin directory
-      '.cache',         // cache directory
-      '.staging',       // npm staging directory
+      '.bin', // npm bin directory
+      '.cache', // cache directory
+      '.staging', // npm staging directory
       '.package-lock.json', // lockfile backup
-      'node_modules',   // nested node_modules
-      '.DS_Store',      // macOS system file
-      'Thumbs.db'       // Windows system file
+      'node_modules', // nested node_modules
+      '.DS_Store', // macOS system file
+      'Thumbs.db', // Windows system file
     ];
 
     if (invalidNames.includes(packageName)) {
@@ -589,7 +595,7 @@ enum BrokenType {
   MISSING_LICENSE = 'missing-license',
   CORRUPTED_NESTED_MODULES = 'corrupted-nested-modules',
   PERMISSION_ERROR = 'permission-error',
-  ACCESS_ERROR = 'access-error'
+  ACCESS_ERROR = 'access-error',
 }
 
 interface BrokenIssueInfo {

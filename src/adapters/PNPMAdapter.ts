@@ -13,7 +13,6 @@ const execAsync = promisify(exec);
  * Handles pnpm-lock.yaml parsing and pnpm command execution
  */
 export class PNPMAdapter extends BasePackageManagerAdapter {
-  
   getType(): PackageManagerType {
     return PackageManagerType.PNPM;
   }
@@ -23,26 +22,26 @@ export class PNPMAdapter extends BasePackageManagerAdapter {
    */
   async readLockfile(projectPath: string): Promise<Lockfile> {
     const lockfilePath = path.join(projectPath, 'pnpm-lock.yaml');
-    
+
     if (!(await fs.pathExists(lockfilePath))) {
       throw new Error(`pnpm-lock.yaml not found at ${lockfilePath}`);
     }
 
     try {
       const lockfileContent = await fs.readFile(lockfilePath, 'utf8');
-      
+
       // Parse YAML content
       const parsedContent = yaml.parse(lockfileContent);
-      
+
       // Validate pnpm-lock.yaml structure
       if (!parsedContent.lockfileVersion) {
         throw new Error('Invalid pnpm-lock.yaml: missing lockfileVersion');
       }
-      
+
       return {
         type: PackageManagerType.PNPM,
         content: parsedContent,
-        path: lockfilePath
+        path: lockfilePath,
       };
     } catch (error: any) {
       if (error.name === 'YAMLParseError') {
@@ -57,12 +56,12 @@ export class PNPMAdapter extends BasePackageManagerAdapter {
    */
   async installPackage(packageName: string, version?: string): Promise<void> {
     const packageSpec = version ? `${packageName}@${version}` : packageName;
-    
+
     try {
       const command = `pnpm add ${packageSpec}`;
       const { stdout, stderr } = await execAsync(command, {
         cwd: this.projectPath,
-        timeout: 60000 // 60 second timeout
+        timeout: 60000, // 60 second timeout
       });
 
       if (stderr && !stderr.includes('WARN')) {
@@ -80,12 +79,12 @@ export class PNPMAdapter extends BasePackageManagerAdapter {
    */
   async updatePackage(packageName: string, version: string): Promise<void> {
     const packageSpec = `${packageName}@${version}`;
-    
+
     try {
       const command = `pnpm update ${packageSpec}`;
       const { stdout, stderr } = await execAsync(command, {
         cwd: this.projectPath,
-        timeout: 60000
+        timeout: 60000,
       });
 
       if (stderr && !stderr.includes('WARN')) {
@@ -106,7 +105,7 @@ export class PNPMAdapter extends BasePackageManagerAdapter {
       const command = `pnpm remove ${packageName}`;
       const { stdout, stderr } = await execAsync(command, {
         cwd: this.projectPath,
-        timeout: 60000
+        timeout: 60000,
       });
 
       if (stderr && !stderr.includes('WARN')) {
@@ -124,7 +123,7 @@ export class PNPMAdapter extends BasePackageManagerAdapter {
    */
   async regenerateLockfile(): Promise<void> {
     const lockfilePath = this.getLockfilePath();
-    
+
     try {
       // Remove existing lockfile if it exists
       if (await fs.pathExists(lockfilePath)) {
@@ -140,7 +139,7 @@ export class PNPMAdapter extends BasePackageManagerAdapter {
       // Run pnpm install to regenerate lockfile
       const { stdout, stderr } = await execAsync('pnpm install', {
         cwd: this.projectPath,
-        timeout: 120000 // 2 minute timeout for full install
+        timeout: 120000, // 2 minute timeout for full install
       });
 
       if (stderr && !stderr.includes('WARN')) {
@@ -173,7 +172,7 @@ export class PNPMAdapter extends BasePackageManagerAdapter {
       importers: lockContent.importers || {},
       packages: lockContent.packages || {},
       dependencies: this.extractDependencies(lockContent),
-      devDependencies: this.extractDevDependencies(lockContent)
+      devDependencies: this.extractDevDependencies(lockContent),
     };
   }
 
@@ -182,7 +181,7 @@ export class PNPMAdapter extends BasePackageManagerAdapter {
    */
   private extractDependencies(lockContent: any): Record<string, PNPMDependency> {
     const dependencies: Record<string, PNPMDependency> = {};
-    
+
     // Handle root dependencies
     if (lockContent.dependencies) {
       for (const [name, info] of Object.entries(lockContent.dependencies)) {
@@ -190,7 +189,7 @@ export class PNPMAdapter extends BasePackageManagerAdapter {
         dependencies[name] = {
           specifier: depInfo.specifier || depInfo,
           version: typeof depInfo === 'string' ? depInfo : depInfo.version,
-          isDev: false
+          isDev: false,
         };
       }
     }
@@ -207,7 +206,7 @@ export class PNPMAdapter extends BasePackageManagerAdapter {
               specifier: depInfo.specifier || depInfo,
               version: typeof depInfo === 'string' ? depInfo : depInfo.version,
               isDev: false,
-              importer: importerPath === '.' ? undefined : importerPath
+              importer: importerPath === '.' ? undefined : importerPath,
             };
           }
         }
@@ -222,7 +221,7 @@ export class PNPMAdapter extends BasePackageManagerAdapter {
    */
   private extractDevDependencies(lockContent: any): Record<string, PNPMDependency> {
     const devDependencies: Record<string, PNPMDependency> = {};
-    
+
     // Handle root dev dependencies
     if (lockContent.devDependencies) {
       for (const [name, info] of Object.entries(lockContent.devDependencies)) {
@@ -230,7 +229,7 @@ export class PNPMAdapter extends BasePackageManagerAdapter {
         devDependencies[name] = {
           specifier: depInfo.specifier || depInfo,
           version: typeof depInfo === 'string' ? depInfo : depInfo.version,
-          isDev: true
+          isDev: true,
         };
       }
     }
@@ -247,7 +246,7 @@ export class PNPMAdapter extends BasePackageManagerAdapter {
               specifier: depInfo.specifier || depInfo,
               version: typeof depInfo === 'string' ? depInfo : depInfo.version,
               isDev: true,
-              importer: importerPath === '.' ? undefined : importerPath
+              importer: importerPath === '.' ? undefined : importerPath,
             };
           }
         }
@@ -267,7 +266,7 @@ export class PNPMAdapter extends BasePackageManagerAdapter {
       if (await fs.pathExists(workspaceFilePath)) {
         const workspaceContent = await fs.readFile(workspaceFilePath, 'utf8');
         const workspaceConfig = yaml.parse(workspaceContent);
-        
+
         if (workspaceConfig.packages && Array.isArray(workspaceConfig.packages)) {
           return workspaceConfig.packages;
         }
@@ -282,7 +281,7 @@ export class PNPMAdapter extends BasePackageManagerAdapter {
           return packageJson.workspaces.packages;
         }
       }
-      
+
       return [];
     } catch (error) {
       return [];
@@ -303,7 +302,7 @@ export class PNPMAdapter extends BasePackageManagerAdapter {
   async getStorePath(): Promise<string> {
     try {
       const { stdout } = await execAsync('pnpm store path', {
-        cwd: this.projectPath
+        cwd: this.projectPath,
       });
       return stdout.trim();
     } catch (error: any) {
@@ -341,28 +340,28 @@ export class PNPMAdapter extends BasePackageManagerAdapter {
   async getPNPMConfig(): Promise<PNPMConfig> {
     try {
       const { stdout } = await execAsync('pnpm config list --json', {
-        cwd: this.projectPath
+        cwd: this.projectPath,
       });
-      
+
       const config = JSON.parse(stdout);
-      
+
       return {
         registry: config.registry || 'https://registry.npmjs.org/',
         storeDir: config['store-dir'],
         cacheDir: config['cache-dir'],
         globalDir: config['global-dir'],
         shamefullyHoist: config['shamefully-hoist'],
-        strictPeerDependencies: config['strict-peer-dependencies']
+        strictPeerDependencies: config['strict-peer-dependencies'],
       };
     } catch (error: any) {
       // Fallback for when JSON output is not available
       try {
         const { stdout } = await execAsync('pnpm config get registry', {
-          cwd: this.projectPath
+          cwd: this.projectPath,
         });
-        
+
         return {
-          registry: stdout.trim() || 'https://registry.npmjs.org/'
+          registry: stdout.trim() || 'https://registry.npmjs.org/',
         };
       } catch (fallbackError: any) {
         throw new Error(`Failed to get pnpm config: ${error.message}`);

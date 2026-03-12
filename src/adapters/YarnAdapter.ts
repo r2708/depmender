@@ -12,7 +12,6 @@ const execAsync = promisify(exec);
  * Handles yarn.lock parsing and yarn command execution
  */
 export class YarnAdapter extends BasePackageManagerAdapter {
-  
   getType(): PackageManagerType {
     return PackageManagerType.YARN;
   }
@@ -22,21 +21,21 @@ export class YarnAdapter extends BasePackageManagerAdapter {
    */
   async readLockfile(projectPath: string): Promise<Lockfile> {
     const lockfilePath = path.join(projectPath, 'yarn.lock');
-    
+
     if (!(await fs.pathExists(lockfilePath))) {
       throw new Error(`yarn.lock not found at ${lockfilePath}`);
     }
 
     try {
       const lockfileContent = await fs.readFile(lockfilePath, 'utf8');
-      
+
       // Parse yarn.lock format (it's not JSON, it's a custom format)
       const parsedContent = this.parseYarnLock(lockfileContent);
-      
+
       return {
         type: PackageManagerType.YARN,
         content: parsedContent,
-        path: lockfilePath
+        path: lockfilePath,
       };
     } catch (error: any) {
       throw new Error(`Failed to read yarn.lock: ${error.message}`);
@@ -48,12 +47,12 @@ export class YarnAdapter extends BasePackageManagerAdapter {
    */
   async installPackage(packageName: string, version?: string): Promise<void> {
     const packageSpec = version ? `${packageName}@${version}` : packageName;
-    
+
     try {
       const command = `yarn add ${packageSpec}`;
       const { stdout, stderr } = await execAsync(command, {
         cwd: this.projectPath,
-        timeout: 60000 // 60 second timeout
+        timeout: 60000, // 60 second timeout
       });
 
       if (stderr && !stderr.includes('warning')) {
@@ -71,12 +70,12 @@ export class YarnAdapter extends BasePackageManagerAdapter {
    */
   async updatePackage(packageName: string, version: string): Promise<void> {
     const packageSpec = `${packageName}@${version}`;
-    
+
     try {
       const command = `yarn upgrade ${packageSpec}`;
       const { stdout, stderr } = await execAsync(command, {
         cwd: this.projectPath,
-        timeout: 60000
+        timeout: 60000,
       });
 
       if (stderr && !stderr.includes('warning')) {
@@ -97,7 +96,7 @@ export class YarnAdapter extends BasePackageManagerAdapter {
       const command = `yarn remove ${packageName}`;
       const { stdout, stderr } = await execAsync(command, {
         cwd: this.projectPath,
-        timeout: 60000
+        timeout: 60000,
       });
 
       if (stderr && !stderr.includes('warning')) {
@@ -115,7 +114,7 @@ export class YarnAdapter extends BasePackageManagerAdapter {
    */
   async regenerateLockfile(): Promise<void> {
     const lockfilePath = this.getLockfilePath();
-    
+
     try {
       // Remove existing lockfile if it exists
       if (await fs.pathExists(lockfilePath)) {
@@ -131,7 +130,7 @@ export class YarnAdapter extends BasePackageManagerAdapter {
       // Run yarn install to regenerate lockfile
       const { stdout, stderr } = await execAsync('yarn install', {
         cwd: this.projectPath,
-        timeout: 120000 // 2 minute timeout for full install
+        timeout: 120000, // 2 minute timeout for full install
       });
 
       if (stderr && !stderr.includes('warning')) {
@@ -161,7 +160,7 @@ export class YarnAdapter extends BasePackageManagerAdapter {
     return {
       yarnVersion: lockContent.yarnVersion || '1',
       dependencies: lockContent.dependencies || {},
-      metadata: lockContent.metadata || {}
+      metadata: lockContent.metadata || {},
     };
   }
 
@@ -176,16 +175,16 @@ export class YarnAdapter extends BasePackageManagerAdapter {
     let currentDependency: Partial<YarnDependency> = {};
     let yarnVersion = '1';
     let inDependenciesSection = false;
-    
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       const trimmedLine = line.trim();
-      
+
       // Skip empty lines and comments (except version comment)
       if (!trimmedLine) {
         continue;
       }
-      
+
       // Check for yarn version
       if (trimmedLine.startsWith('# yarn lockfile v')) {
         const versionMatch = trimmedLine.match(/# yarn lockfile v(\d+)/);
@@ -194,19 +193,19 @@ export class YarnAdapter extends BasePackageManagerAdapter {
         }
         continue;
       }
-      
+
       // Skip other comments
       if (trimmedLine.startsWith('#')) {
         continue;
       }
-      
+
       // Check for package declaration (no indentation and ends with :)
       if (!line.startsWith(' ') && !line.startsWith('\t') && line.endsWith(':')) {
         // Save previous package if exists
         if (currentPackage && Object.keys(currentDependency).length > 0) {
           dependencies[currentPackage] = currentDependency as YarnDependency;
         }
-        
+
         // Start new package - handle quoted package names
         let packageName = line.slice(0, -1).trim(); // Remove trailing : and trim
         if (packageName.startsWith('"') && packageName.endsWith('"')) {
@@ -217,18 +216,18 @@ export class YarnAdapter extends BasePackageManagerAdapter {
         inDependenciesSection = false;
         continue;
       }
-      
+
       // Parse package properties (indented lines)
       if ((line.startsWith(' ') || line.startsWith('\t')) && currentPackage) {
         const propertyLine = trimmedLine;
-        
+
         // Handle dependencies section
         if (propertyLine === 'dependencies:') {
           inDependenciesSection = true;
           currentDependency.dependencies = {};
           continue;
         }
-        
+
         // Handle dependency entries (more indented under dependencies:)
         if (inDependenciesSection && (line.startsWith('  ') || line.startsWith('\t\t'))) {
           const depMatch = propertyLine.match(/^(.+?)\s+"?([^"]+)"?$/);
@@ -238,16 +237,16 @@ export class YarnAdapter extends BasePackageManagerAdapter {
           }
           continue;
         }
-        
+
         // Handle regular properties
         if (!inDependenciesSection || !line.startsWith('  ')) {
           inDependenciesSection = false;
-          
+
           const propertyMatch = propertyLine.match(/^(.+?)\s+"?([^"]+)"?$/);
           if (propertyMatch) {
             const [, key, value] = propertyMatch;
             const cleanValue = value.replace(/"/g, '');
-            
+
             switch (key) {
               case 'version':
                 currentDependency.version = cleanValue;
@@ -263,19 +262,19 @@ export class YarnAdapter extends BasePackageManagerAdapter {
         }
       }
     }
-    
+
     // Save last package
     if (currentPackage && Object.keys(currentDependency).length > 0) {
       dependencies[currentPackage] = currentDependency as YarnDependency;
     }
-    
+
     return {
       yarnVersion,
       dependencies,
       metadata: {
         parsedAt: new Date().toISOString(),
-        totalPackages: Object.keys(dependencies).length
-      }
+        totalPackages: Object.keys(dependencies).length,
+      },
     };
   }
 
@@ -285,7 +284,7 @@ export class YarnAdapter extends BasePackageManagerAdapter {
   async getWorkspaces(): Promise<string[]> {
     try {
       const packageJson = await this.readPackageJson();
-      
+
       if (packageJson.workspaces) {
         // Handle both array format and object format
         if (Array.isArray(packageJson.workspaces)) {
@@ -294,7 +293,7 @@ export class YarnAdapter extends BasePackageManagerAdapter {
           return packageJson.workspaces.packages;
         }
       }
-      
+
       return [];
     } catch (error) {
       return [];
@@ -339,30 +338,30 @@ export class YarnAdapter extends BasePackageManagerAdapter {
   async getYarnConfig(): Promise<YarnConfig> {
     try {
       const { stdout } = await execAsync('yarn config list --json', {
-        cwd: this.projectPath
+        cwd: this.projectPath,
       });
-      
+
       // Yarn config output might be multiple JSON objects, take the last one
       const lines = stdout.trim().split('\n');
       const configLine = lines[lines.length - 1];
       const config = JSON.parse(configLine);
-      
+
       return {
         registry: config.npmRegistryServer || config.registry || 'https://registry.yarnpkg.com',
         cacheFolder: config.cacheFolder,
         globalFolder: config.globalFolder,
         yarnPath: config.yarnPath,
-        version: config.version
+        version: config.version,
       };
     } catch (error: any) {
       // Fallback for older yarn versions or when JSON output is not available
       try {
         const { stdout } = await execAsync('yarn config get registry', {
-          cwd: this.projectPath
+          cwd: this.projectPath,
         });
-        
+
         return {
-          registry: stdout.trim() || 'https://registry.yarnpkg.com'
+          registry: stdout.trim() || 'https://registry.yarnpkg.com',
         };
       } catch (fallbackError: any) {
         throw new Error(`Failed to get yarn config: ${error.message}`);
@@ -377,10 +376,10 @@ export class YarnAdapter extends BasePackageManagerAdapter {
     try {
       const version = await YarnAdapter.getVersion();
       const major = parseInt(version.split('.')[0], 10);
-      
+
       return {
         major,
-        full: version
+        full: version,
       };
     } catch (error) {
       throw new Error('Could not detect yarn version');

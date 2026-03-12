@@ -1,28 +1,30 @@
 import * as semver from 'semver';
 import fetch from 'node-fetch';
 import { BaseDependencyScanner } from './BaseDependencyScanner';
-import { 
-  ScanContext, 
-  ScanResult, 
-  ScannerType, 
-  DependencyIssue, 
-  IssueType, 
-  IssueSeverity 
+import {
+  ScanContext,
+  ScanResult,
+  ScannerType,
+  DependencyIssue,
+  IssueType,
+  IssueSeverity,
 } from '../core/types';
+import { CacheManager } from '../utils/CacheManager';
 
 /**
  * Scanner that detects outdated packages by comparing current versions to latest available versions
  */
 export class OutdatedScanner extends BaseDependencyScanner {
-  
   private readonly registryUrl: string;
   private readonly timeout: number;
-  private readonly cache: Map<string, PackageInfo> = new Map();
+  private readonly cacheManager: CacheManager;
+  private readonly CACHE_TTL = 3600000; // 1 hour in milliseconds
 
   constructor(registryUrl: string = 'https://registry.npmjs.org', timeout: number = 5000) {
     super();
     this.registryUrl = registryUrl;
     this.timeout = timeout;
+    this.cacheManager = CacheManager.getInstance();
   }
 
   getScannerType(): ScannerType {
@@ -31,33 +33,31 @@ export class OutdatedScanner extends BaseDependencyScanner {
 
   async scan(context: ScanContext): Promise<ScanResult> {
     this.validateContext(context);
-    
+
     const result = this.createBaseScanResult();
     const allDependencies = this.getAllDeclaredDependencies(context);
-    
+
     // Check all dependencies in parallel for much faster scanning
-    const checkPromises = Object.entries(allDependencies).map(async ([packageName, declaredVersion]) => {
-      try {
-        const issue = await this.checkPackageForUpdates(
-          packageName, 
-          declaredVersion, 
-          context
-        );
-        
-        return issue;
-      } catch (error) {
-        console.warn(`Failed to check updates for ${packageName}:`, error);
-        // Continue with other packages even if one fails
-        return null;
+    const checkPromises = Object.entries(allDependencies).map(
+      async ([packageName, declaredVersion]) => {
+        try {
+          const issue = await this.checkPackageForUpdates(packageName, declaredVersion, context);
+
+          return issue;
+        } catch (error) {
+          console.warn(`Failed to check updates for ${packageName}:`, error);
+          // Continue with other packages even if one fails
+          return null;
+        }
       }
-    });
-    
+    );
+
     // Wait for all checks to complete
     const issues = await Promise.all(checkPromises);
-    
+
     // Filter out null results and add to result
     result.issues.push(...issues.filter((issue): issue is DependencyIssue => issue !== null));
-    
+
     return result;
   }
 
@@ -65,13 +65,13 @@ export class OutdatedScanner extends BaseDependencyScanner {
    * Checks if a package has available updates
    */
   private async checkPackageForUpdates(
-    packageName: string, 
-    declaredVersion: string, 
+    packageName: string,
+    declaredVersion: string,
     context: ScanContext
   ): Promise<DependencyIssue | null> {
     // Get current installed version
     const installedVersion = this.getInstalledVersion(packageName, context);
-    
+
     if (!installedVersion) {
       // Package not installed - this is handled by MissingScanner
       return null;
@@ -79,7 +79,7 @@ export class OutdatedScanner extends BaseDependencyScanner {
 
     // Get latest version from registry
     const packageInfo = await this.getPackageInfo(packageName);
-    
+
     if (!packageInfo || !packageInfo.latestVersion) {
       return null;
     }
@@ -104,7 +104,7 @@ export class OutdatedScanner extends BaseDependencyScanner {
       latestVersion: packageInfo.latestVersion,
       severity: updateInfo.severity,
       description: updateInfo.description,
-      fixable: true
+      fixable: true,
     };
   }
 
@@ -121,9 +121,13 @@ export class OutdatedScanner extends BaseDependencyScanner {
       // Clean versions for semver comparison
       const cleanInstalled = semver.clean(installedVersion);
       const cleanLatest = semver.clean(latestVersion);
-      
+
       if (!cleanInstalled || !cleanLatest) {
-        return { hasUpdate: false, severity: IssueSeverity.LOW, description: 'Invalid version format' };
+        return {
+          hasUpdate: false,
+          severity: IssueSeverity.LOW,
+          description: 'Invalid version format',
+        };
       }
 
       // Check if already up to date
@@ -133,7 +137,7 @@ export class OutdatedScanner extends BaseDependencyScanner {
 
       // Determine update type and severity
       const versionDiff = semver.diff(cleanInstalled, cleanLatest);
-      
+
       let severity: IssueSeverity;
       let description: string;
 
@@ -168,12 +172,11 @@ export class OutdatedScanner extends BaseDependencyScanner {
       }
 
       return { hasUpdate: true, severity, description };
-      
     } catch (error) {
-      return { 
-        hasUpdate: false, 
-        severity: IssueSeverity.LOW, 
-        description: `Error analyzing version: ${error}` 
+      return {
+        hasUpdate: false,
+        severity: IssueSeverity.LOW,
+        description: `Error analyzing version: ${error}`,
       };
     }
   }
@@ -206,12 +209,13 @@ export class OutdatedScanner extends BaseDependencyScanner {
   }
 
   /**
-   * Gets package information from npm registry
+   * Gets package information from npm registry with hybrid caching
    */
   private async getPackageInfo(packageName: string): Promise<PackageInfo | null> {
-    // Check cache first
-    if (this.cache.has(packageName)) {
-      return this.cache.get(packageName)!;
+    // Check persistent cache first (memory + file)
+    const cached = this.cacheManager.get<PackageInfo>(`pkg:${packageName}`);
+    if (cached) {
+      return cached;
     }
 
     try {
@@ -222,9 +226,9 @@ export class OutdatedScanner extends BaseDependencyScanner {
       const response = await fetch(url, {
         signal: controller.signal,
         headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'depguardian/1.0.0'
-        }
+          Accept: 'application/json',
+          'User-Agent': 'depmender/2.3.2',
+        },
       });
 
       clearTimeout(timeoutId);
@@ -236,22 +240,21 @@ export class OutdatedScanner extends BaseDependencyScanner {
         return null;
       }
 
-      const data = await response.json() as any;
-      
+      const data = (await response.json()) as any;
+
       const packageInfo: PackageInfo = {
         name: packageName,
         latestVersion: data['dist-tags']?.latest,
         versions: Object.keys(data.versions || {}),
         description: data.description,
         homepage: data.homepage,
-        repository: data.repository?.url
+        repository: data.repository?.url,
       };
 
-      // Cache the result
-      this.cache.set(packageName, packageInfo);
-      
+      // Cache the result with TTL (persists across runs)
+      this.cacheManager.set(`pkg:${packageName}`, packageInfo, this.CACHE_TTL);
+
       return packageInfo;
-      
     } catch (error: any) {
       if (error.name === 'AbortError') {
         console.warn(`Timeout fetching package info for ${packageName}`);
@@ -265,20 +268,17 @@ export class OutdatedScanner extends BaseDependencyScanner {
   /**
    * Gets available versions for a package within a specific range
    */
-  async getAvailableVersionsInRange(
-    packageName: string, 
-    versionRange: string
-  ): Promise<string[]> {
+  async getAvailableVersionsInRange(packageName: string, versionRange: string): Promise<string[]> {
     const packageInfo = await this.getPackageInfo(packageName);
-    
+
     if (!packageInfo || !packageInfo.versions) {
       return [];
     }
 
     try {
-      return packageInfo.versions.filter(version => 
-        semver.satisfies(version, versionRange)
-      ).sort(semver.rcompare); // Sort in descending order
+      return packageInfo.versions
+        .filter(version => semver.satisfies(version, versionRange))
+        .sort(semver.rcompare); // Sort in descending order
     } catch (error) {
       console.warn(`Error filtering versions for ${packageName}:`, error);
       return [];
@@ -289,16 +289,26 @@ export class OutdatedScanner extends BaseDependencyScanner {
    * Clears the package info cache
    */
   clearCache(): void {
-    this.cache.clear();
+    // Clear only package-related cache entries
+    const keys = this.cacheManager.keys();
+    keys.forEach(key => {
+      if (key.startsWith('pkg:')) {
+        this.cacheManager.delete(key);
+      }
+    });
   }
 
   /**
    * Gets cache statistics
    */
-  getCacheStats(): { size: number; packages: string[] } {
+  getCacheStats(): { size: number; packages: string[]; hitRate: number } {
+    const stats = this.cacheManager.getStats();
+    const packageKeys = this.cacheManager.keys().filter(k => k.startsWith('pkg:'));
+
     return {
-      size: this.cache.size,
-      packages: Array.from(this.cache.keys())
+      size: packageKeys.length,
+      packages: packageKeys.map(k => k.replace('pkg:', '')),
+      hitRate: stats.hitRate,
     };
   }
 }

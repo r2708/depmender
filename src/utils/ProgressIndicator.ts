@@ -13,7 +13,7 @@ export class ProgressIndicator {
     this.spinner = ora({
       text: initialText,
       color: 'cyan',
-      spinner: 'dots'
+      spinner: 'dots',
     });
     this.startTime = Date.now();
   }
@@ -138,7 +138,7 @@ export class MultiStepProgress {
     this.spinner = ora({
       text: this.getStepText(),
       color: 'cyan',
-      spinner: 'dots'
+      spinner: 'dots',
     });
   }
 
@@ -165,13 +165,13 @@ export class MultiStepProgress {
   completeStep(customText?: string): void {
     const stepText = customText || this.steps[this.currentStep];
     this.spinner.succeed(`${chalk.green('✓')} ${stepText}`);
-    
+
     if (this.currentStep < this.steps.length - 1) {
       this.currentStep++;
       this.spinner = ora({
         text: this.getStepText(),
         color: 'cyan',
-        spinner: 'dots'
+        spinner: 'dots',
       }).start();
     }
   }

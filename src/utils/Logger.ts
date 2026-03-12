@@ -8,7 +8,7 @@ export enum LogLevel {
   WARN = 1,
   INFO = 2,
   DEBUG = 3,
-  VERBOSE = 4
+  VERBOSE = 4,
 }
 
 export interface LogEntry {
@@ -94,7 +94,13 @@ export class Logger {
   /**
    * Core logging method
    */
-  private log(level: LogLevel, message: string, context?: string, error?: Error, metadata?: Record<string, any>): void {
+  private log(
+    level: LogLevel,
+    message: string,
+    context?: string,
+    error?: Error,
+    metadata?: Record<string, any>
+  ): void {
     if (level > this.logLevel) {
       return;
     }
@@ -105,7 +111,7 @@ export class Logger {
       timestamp: new Date(),
       context,
       error,
-      metadata
+      metadata,
     };
 
     this.logs.push(entry);
@@ -126,7 +132,7 @@ export class Logger {
     const timestamp = entry.timestamp.toISOString();
     const levelStr = LogLevel[entry.level].padEnd(7);
     const contextStr = entry.context ? `[${entry.context}] ` : '';
-    
+
     let message = `${timestamp} ${levelStr} ${contextStr}${entry.message}`;
 
     if (entry.metadata && Object.keys(entry.metadata).length > 0) {
@@ -188,7 +194,10 @@ export class Logger {
  * Child logger that automatically includes context
  */
 export class ChildLogger {
-  constructor(private parent: Logger, private context: string) {}
+  constructor(
+    private parent: Logger,
+    private context: string
+  ) {}
 
   error(message: string, error?: Error, metadata?: Record<string, any>): void {
     this.parent.error(message, error, this.context, metadata);

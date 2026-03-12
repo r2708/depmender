@@ -1,62 +1,68 @@
 import { BaseDependencyScanner } from './BaseDependencyScanner';
-import { ScanContext, ScanResult, ScannerType, SecurityIssue, SecuritySeverity, VulnerabilityInfo } from '../core/types';
+import {
+  ScanContext,
+  ScanResult,
+  ScannerType,
+  SecurityIssue,
+  SecuritySeverity,
+  VulnerabilityInfo,
+} from '../core/types';
 
 /**
  * SecurityScanner checks packages against vulnerability databases
  * Integrates with npm audit API and other security databases
  */
 export class SecurityScanner extends BaseDependencyScanner {
-  
   getScannerType(): ScannerType {
     return ScannerType.SECURITY;
   }
 
   async scan(context: ScanContext): Promise<ScanResult> {
     this.validateContext(context);
-    
+
     const result = this.createBaseScanResult();
     const allDependencies = this.getAllDeclaredDependencies(context);
-    
+
     // Check all dependencies in parallel for much faster scanning
     const scanPromises = Object.entries(allDependencies).map(async ([packageName, version]) => {
       const installedPackage = this.findInstalledPackage(packageName, context);
       if (!installedPackage) {
         return []; // Skip if package is not installed
       }
-      
+
       const vulnerabilities = await this.checkPackageVulnerabilities(
-        packageName, 
+        packageName,
         installedPackage.version
       );
-      
+
       // Process all vulnerabilities for this package in parallel
-      const issuePromises = vulnerabilities.map(async (vulnerability) => {
+      const issuePromises = vulnerabilities.map(async vulnerability => {
         const patchAvailable = await this.isPatchAvailable(packageName, vulnerability.id);
-        
+
         const securityIssue: SecurityIssue = {
           packageName,
           version: installedPackage.version,
           vulnerability,
           severity: this.categorizeSecurityIssue(vulnerability, packageName, patchAvailable),
           fixedIn: await this.getFixedVersion(packageName, vulnerability.id),
-          patchAvailable
+          patchAvailable,
         };
-        
+
         return securityIssue;
       });
-      
+
       return Promise.all(issuePromises);
     });
-    
+
     // Wait for all scans to complete
     const allIssues = await Promise.all(scanPromises);
-    
+
     // Flatten the array of arrays and add to result
     result.securityIssues!.push(...allIssues.flat());
-    
+
     // Prioritize security issues for better reporting
     result.securityIssues = this.prioritizeSecurityIssues(result.securityIssues!);
-    
+
     return result;
   }
 
@@ -64,7 +70,7 @@ export class SecurityScanner extends BaseDependencyScanner {
    * Check a specific package for vulnerabilities using npm audit API
    */
   private async checkPackageVulnerabilities(
-    packageName: string, 
+    packageName: string,
     version: string
   ): Promise<VulnerabilityInfo[]> {
     try {
@@ -85,28 +91,28 @@ export class SecurityScanner extends BaseDependencyScanner {
   private async callNpmAuditAPI(packageName: string, version: string): Promise<any> {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 100));
-    
+
     // Simulate some known vulnerabilities for testing
-    const knownVulnerablePackages = [
-      'lodash', 'moment', 'axios', 'express', 'react', 'vue'
-    ];
-    
+    const knownVulnerablePackages = ['lodash', 'moment', 'axios', 'express', 'react', 'vue'];
+
     if (knownVulnerablePackages.includes(packageName)) {
       return {
-        vulnerabilities: [{
-          id: `GHSA-${Math.random().toString(36).substr(2, 9)}`,
-          title: `Security vulnerability in ${packageName}`,
-          description: `A security vulnerability was found in ${packageName} version ${version}`,
-          cvss: Math.random() * 10, // Random CVSS score for simulation
-          cwe: ['CWE-79', 'CWE-89'],
-          references: [
-            `https://github.com/advisories/GHSA-${Math.random().toString(36).substr(2, 9)}`,
-            `https://nvd.nist.gov/vuln/detail/CVE-2023-${Math.floor(Math.random() * 10000)}`
-          ]
-        }]
+        vulnerabilities: [
+          {
+            id: `GHSA-${Math.random().toString(36).substr(2, 9)}`,
+            title: `Security vulnerability in ${packageName}`,
+            description: `A security vulnerability was found in ${packageName} version ${version}`,
+            cvss: Math.random() * 10, // Random CVSS score for simulation
+            cwe: ['CWE-79', 'CWE-89'],
+            references: [
+              `https://github.com/advisories/GHSA-${Math.random().toString(36).substr(2, 9)}`,
+              `https://nvd.nist.gov/vuln/detail/CVE-2023-${Math.floor(Math.random() * 10000)}`,
+            ],
+          },
+        ],
       };
     }
-    
+
     return { vulnerabilities: [] };
   }
 
@@ -117,14 +123,14 @@ export class SecurityScanner extends BaseDependencyScanner {
     if (!auditResult.vulnerabilities) {
       return [];
     }
-    
+
     return auditResult.vulnerabilities.map((vuln: any) => ({
       id: vuln.id,
       title: vuln.title,
       description: vuln.description,
       cvss: vuln.cvss,
       cwe: vuln.cwe || [],
-      references: vuln.references || []
+      references: vuln.references || [],
     }));
   }
 
@@ -132,14 +138,14 @@ export class SecurityScanner extends BaseDependencyScanner {
    * Check alternative vulnerability databases when npm audit fails
    */
   private async checkAlternativeVulnerabilityDatabases(
-    packageName: string, 
+    packageName: string,
     version: string
   ): Promise<VulnerabilityInfo[]> {
     // In production, this would check other databases like:
     // - GitHub Security Advisory Database
     // - Snyk Vulnerability Database
     // - OSV Database
-    
+
     // For now, return empty array as fallback
     return [];
   }
@@ -171,18 +177,18 @@ export class SecurityScanner extends BaseDependencyScanner {
     patchAvailable: boolean
   ): SecuritySeverity {
     let baseSeverity = this.mapCvssToSeverity(vulnerability.cvss);
-    
+
     // Upgrade severity if no patch is available for high-impact vulnerabilities
     if (!patchAvailable && vulnerability.cvss >= 7.0) {
       if (baseSeverity === SecuritySeverity.HIGH) {
         baseSeverity = SecuritySeverity.CRITICAL;
       }
     }
-    
+
     // Consider CWE categories for additional context
     const criticalCWEs = ['CWE-78', 'CWE-79', 'CWE-89', 'CWE-94', 'CWE-611'];
     const hasCriticalCWE = vulnerability.cwe.some(cwe => criticalCWEs.includes(cwe));
-    
+
     if (hasCriticalCWE && vulnerability.cvss >= 6.0) {
       // Upgrade severity for critical vulnerability types
       if (baseSeverity === SecuritySeverity.MODERATE) {
@@ -191,13 +197,23 @@ export class SecurityScanner extends BaseDependencyScanner {
         baseSeverity = SecuritySeverity.CRITICAL;
       }
     }
-    
+
     // Consider package criticality (core packages get higher severity)
     const criticalPackages = [
-      'express', 'react', 'vue', 'angular', 'lodash', 'axios', 'request',
-      'webpack', 'babel-core', 'typescript', 'eslint', 'jest'
+      'express',
+      'react',
+      'vue',
+      'angular',
+      'lodash',
+      'axios',
+      'request',
+      'webpack',
+      'babel-core',
+      'typescript',
+      'eslint',
+      'jest',
     ];
-    
+
     if (criticalPackages.includes(packageName) && vulnerability.cvss >= 5.0) {
       if (baseSeverity === SecuritySeverity.LOW) {
         baseSeverity = SecuritySeverity.MODERATE;
@@ -205,7 +221,7 @@ export class SecurityScanner extends BaseDependencyScanner {
         baseSeverity = SecuritySeverity.HIGH;
       }
     }
-    
+
     return baseSeverity;
   }
 
@@ -237,27 +253,27 @@ export class SecurityScanner extends BaseDependencyScanner {
         [SecuritySeverity.CRITICAL]: 4,
         [SecuritySeverity.HIGH]: 3,
         [SecuritySeverity.MODERATE]: 2,
-        [SecuritySeverity.LOW]: 1
+        [SecuritySeverity.LOW]: 1,
       };
-      
+
       const severityDiff = severityOrder[b.severity] - severityOrder[a.severity];
       if (severityDiff !== 0) {
         return severityDiff;
       }
-      
+
       // Then by CVSS score
       const cvssDiff = b.vulnerability.cvss - a.vulnerability.cvss;
       if (cvssDiff !== 0) {
         return cvssDiff;
       }
-      
+
       // Finally by patch availability (patches available first)
       if (a.patchAvailable && !b.patchAvailable) {
         return -1;
       } else if (!a.patchAvailable && b.patchAvailable) {
         return 1;
       }
-      
+
       return 0;
     });
   }
@@ -270,13 +286,13 @@ export class SecurityScanner extends BaseDependencyScanner {
       [SecuritySeverity.CRITICAL]: 0,
       [SecuritySeverity.HIGH]: 0,
       [SecuritySeverity.MODERATE]: 0,
-      [SecuritySeverity.LOW]: 0
+      [SecuritySeverity.LOW]: 0,
     };
-    
+
     securityIssues.forEach(issue => {
       stats[issue.severity]++;
     });
-    
+
     return stats;
   }
 
@@ -291,10 +307,11 @@ export class SecurityScanner extends BaseDependencyScanner {
    * Get packages with the highest security risk
    */
   public getHighRiskPackages(securityIssues: SecurityIssue[]): string[] {
-    const criticalAndHighIssues = securityIssues.filter(issue => 
-      issue.severity === SecuritySeverity.CRITICAL || issue.severity === SecuritySeverity.HIGH
+    const criticalAndHighIssues = securityIssues.filter(
+      issue =>
+        issue.severity === SecuritySeverity.CRITICAL || issue.severity === SecuritySeverity.HIGH
     );
-    
+
     const packageNames = new Set(criticalAndHighIssues.map(issue => issue.packageName));
     return Array.from(packageNames);
   }
@@ -302,7 +319,10 @@ export class SecurityScanner extends BaseDependencyScanner {
   /**
    * Get the version where a vulnerability is fixed
    */
-  private async getFixedVersion(packageName: string, vulnerabilityId: string): Promise<string | undefined> {
+  private async getFixedVersion(
+    packageName: string,
+    vulnerabilityId: string
+  ): Promise<string | undefined> {
     // In production, this would query the vulnerability database for fix information
     // For simulation, return a mock fixed version
     return Math.random() > 0.5 ? '1.2.3' : undefined;

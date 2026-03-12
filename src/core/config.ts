@@ -42,20 +42,20 @@ export const DEFAULT_CONFIG: DepmenderConfig = {
     maxOutdatedDays: 90,
     allowedVulnerabilities: [],
     excludePackages: [],
-    includeDev: true
+    includeDev: true,
   },
   autoFix: {
     enabled: false,
     confirmBeforeFix: true,
     backupBeforeFix: true,
-    maxRiskLevel: 'medium'
+    maxRiskLevel: 'medium',
   },
   output: {
     format: 'detailed',
     showSuccessMessages: true,
-    colors: true
+    colors: true,
   },
-  integrations: {}
+  integrations: {},
 };
 
 /**
@@ -66,7 +66,7 @@ const CONFIG_FILES = [
   'depmender.config.json',
   '.depmenderrc',
   '.depmenderrc.json',
-  '.depmenderrc.js'
+  '.depmenderrc.js',
 ];
 
 /**
@@ -144,7 +144,9 @@ export class ConfigManager {
         return JSON.parse(content);
       }
     } catch (error) {
-      throw new Error(`Failed to load config file ${filePath}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to load config file ${filePath}: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -171,9 +173,7 @@ export class ConfigManager {
     return excludePatterns.some(pattern => {
       if (pattern.includes('*')) {
         // Convert glob pattern to regex
-        const regexPattern = pattern
-          .replace(/\*/g, '.*')
-          .replace(/\?/g, '.');
+        const regexPattern = pattern.replace(/\*/g, '.*').replace(/\?/g, '.');
         return new RegExp(`^${regexPattern}$`).test(packageName);
       }
       return packageName === pattern;
@@ -269,7 +269,10 @@ module.exports = {
 
     // Validate rules
     if (this.config.rules) {
-      if (this.config.rules.maxOutdatedDays !== undefined && this.config.rules.maxOutdatedDays < 0) {
+      if (
+        this.config.rules.maxOutdatedDays !== undefined &&
+        this.config.rules.maxOutdatedDays < 0
+      ) {
         errors.push('rules.maxOutdatedDays must be >= 0');
       }
 
@@ -277,7 +280,9 @@ module.exports = {
         const validSeverities = ['low', 'moderate', 'high', 'critical'];
         for (const severity of this.config.rules.allowedVulnerabilities) {
           if (!validSeverities.includes(severity.toLowerCase())) {
-            errors.push(`Invalid vulnerability severity: ${severity}. Must be one of: ${validSeverities.join(', ')}`);
+            errors.push(
+              `Invalid vulnerability severity: ${severity}. Must be one of: ${validSeverities.join(', ')}`
+            );
           }
         }
       }
@@ -287,7 +292,9 @@ module.exports = {
     if (this.config.autoFix?.maxRiskLevel) {
       const validRiskLevels = ['low', 'medium', 'high', 'critical'];
       if (!validRiskLevels.includes(this.config.autoFix.maxRiskLevel)) {
-        errors.push(`Invalid maxRiskLevel: ${this.config.autoFix.maxRiskLevel}. Must be one of: ${validRiskLevels.join(', ')}`);
+        errors.push(
+          `Invalid maxRiskLevel: ${this.config.autoFix.maxRiskLevel}. Must be one of: ${validRiskLevels.join(', ')}`
+        );
       }
     }
 
@@ -295,13 +302,15 @@ module.exports = {
     if (this.config.output?.format) {
       const validFormats = ['minimal', 'detailed', 'json'];
       if (!validFormats.includes(this.config.output.format)) {
-        errors.push(`Invalid output format: ${this.config.output.format}. Must be one of: ${validFormats.join(', ')}`);
+        errors.push(
+          `Invalid output format: ${this.config.output.format}. Must be one of: ${validFormats.join(', ')}`
+        );
       }
     }
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 }
